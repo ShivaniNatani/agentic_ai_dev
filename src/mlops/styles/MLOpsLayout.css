@@ -1,0 +1,134 @@
+/* MLOps Strict Layout */
+
+.mlops-root {
+    display: flex;
+    width: 100%;
+    /* Occupy remaining height after Navbar (approx 64px) */
+    height: calc(100vh - 70px);
+    overflow: hidden;
+    background-color: var(--aurora-night);
+    position: relative;
+    /* Ensure it sits on top of any absolute hero elements */
+    z-index: 10;
+}
+
+/* Sidebar - Fixed Left */
+.mlops-sidebar {
+    width: 260px;
+    height: 100%;
+    flex-shrink: 0;
+    background: var(--glass-bg);
+    /* Darker sidebar */
+    backdrop-filter: blur(20px);
+    border-right: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    overflow-y: auto;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Main Content - Scrollable Right */
+.mlops-content {
+    flex: 1;
+    height: 100%;
+    overflow-y: auto;
+    padding: 2rem;
+    position: relative;
+    background: transparent;
+}
+
+/* Header inside Content */
+.mlops-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+}
+
+.mlops-title {
+    font-family: var(--font-display, sans-serif);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Navigation Items */
+.mlops-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    margin-bottom: 4px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    /* Slate 400 */
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    background: transparent;
+}
+
+.mlops-nav-item:hover {
+    color: var(--text-primary);
+    background: var(--glass-bg-light);
+}
+
+.mlops-nav-item.active {
+    background: rgba(var(--primary-rgb, 59, 130, 246), 0.1);
+    border-color: rgba(var(--primary-rgb, 59, 130, 246), 0.5);
+    color: var(--text-primary);
+    box-shadow: 0 0 15px rgba(var(--primary-rgb, 59, 130, 246), 0.15);
+}
+
+.mlops-nav-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Header Text */
+.mlops-brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2rem;
+    letter-spacing: 0.02em;
+}
+
+.mlops-brand span {
+    color: var(--aurora-primary, #3b82f6);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .mlops-sidebar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        z-index: 50;
+        width: 80%;
+        max-width: 300px;
+        background: #0f172a;
+        /* Solid bg for mobile */
+    }
+
+    .mlops-sidebar.open {
+        transform: translateX(0);
+    }
+
+    .mlops-content {
+        padding: 1rem;
+    }
+
+    .mlops-mobile-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+        backdrop-filter: blur(4px);
+    }
+}

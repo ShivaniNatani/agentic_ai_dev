@@ -1,0 +1,66 @@
+
+# Credentials & tokens
+*.key
+*.pem
+*.crt
+*.pfx
+*.p12
+*.keystore
+*.jks
+*.asc
+*.gpg
+*.kdbx
+
+# Google / cloud secrets
+client_secret*.json
+key_file*.json
+service_account*.json
+*.credentials.json
+mlflow-sa*.json
+
+# Env/config that may hold secrets
+.env
+.env.*
+*.env
+*.env.*
+*.secrets
+secrets*.yaml
+config.json
+patient_id.json
+
+# Python cache / build files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+dist/
+build/
+.idea/
+.vscode/
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Local-only folders from workspace
+agent_cdphp/
+cdphp/
+cdphp_v2/
+screenshots/
+test/
+output/
+chat/
+gmail/client_secret.json
+
+# Diagnostics and artifacts
+diagnose_*.py
+check_*.py
+test_*.py
+*.png
+monitoring_newsletter.md
+tmp_*.csv
+resilience.py
+
+# Allow Vertex AI implementation
+!Vertex_ai/

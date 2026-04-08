@@ -1,0 +1,8 @@
+{
+    "generation_config": {
+        "temperature": 0,
+        "top_p": 1.0,
+        "response_mime_type": "text/plain"
+    },
+    "service_account_file": "key_file.json"
+}

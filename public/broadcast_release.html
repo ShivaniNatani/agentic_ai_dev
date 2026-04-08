@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>IKS Platform 3.0 - Launch Hub</title>
+   <script src="https://unpkg.com/lucide@latest"></script>
+
+
+   <!-- SOCIAL & SEO (International Scale) -->
+   <meta property="og:title" content="The Convergence: IKS Platform 3.0">
+   <meta property="og:description"
+       content="Unifying Autonomous Agents, MLOps, and Operational Intelligence. The future of enterprise automation is here.">
+   <meta property="og:image" content="https://ikswork.com/launch-preview.jpg">
+   <!-- Placeholder for eventual real image -->
+   <meta property="og:url" content="https://ikswork.com/rel-3.0">
+   <meta name="twitter:card" content="summary_large_image">
+   <style>
+       /* ==================== CORE CSS ==================== */
+       :root {
+           --bg: #020204;
+           --text: #e0e6ed;
+           --primary: #56a6fa;
+           --accent-purple: #a855f7;
+       }
+
+
+       body {
+           margin: 0;
+           padding: 0;
+           background-color: var(--bg);
+           color: var(--text);
+           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+           overflow-x: hidden;
+           scroll-behavior: smooth;
+       }
+
+
+       * {
+           box-sizing: border-box;
+       }
+
+
+       /* HERO */
+       .hero-section {
+           position: relative;
+           min-height: 85vh;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           padding: 80px 20px;
+           overflow: hidden;
+           /* Grand, galactic background */
+           background: radial-gradient(circle at 50% 0%, rgba(86, 166, 250, 0.15) 0%, transparent 60%),
+               radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
+               linear-gradient(to bottom, #020204 0%, #08090c 100%);
+       }
+
+
+       .hero-content {
+           position: relative;
+           z-index: 10;
+           text-align: center;
+           max-width: 1000px;
+           width: 100%;
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+       }
+
+
+       .hero-badge {
+           display: inline-flex;
+           align-items: center;
+           gap: 8px;
+           padding: 8px 20px;
+           background: rgba(255, 255, 255, 0.05);
+           border: 1px solid rgba(255, 255, 255, 0.1);
+           border-radius: 100px;
+           font-size: 14px;
+           color: #56a6fa;
+           margin-bottom: 30px;
+           box-shadow: 0 0 20px rgba(86, 166, 250, 0.1);
+           letter-spacing: 0.5px;
+           text-transform: uppercase;
+       }
+
+
+       h1 {
+           font-size: clamp(60px, 8vw, 100px);
+           /* Massive title */
+           font-weight: 800;
+           margin: 0 0 24px 0;
+           line-height: 1.05;
+           letter-spacing: -2px;
+       }
+
+
+       .gradient-text {
+           background: linear-gradient(135deg, #fff 0%, #56a6fa 50%, #a855f7 100%);
+           -webkit-background-clip: text;
+           -webkit-text-fill-color: transparent;
+           background-clip: text;
+           text-shadow: 0 0 40px rgba(86, 166, 250, 0.3);
+           /* Glow effect */
+       }
+
+
+       .hero-description {
+           font-size: 18px;
+           color: rgba(255, 255, 255, 0.6);
+           line-height: 1.6;
+           max-width: 600px;
+           margin: 0 auto 30px;
+       }
+
+
+       .hero-buttons {
+           display: flex;
+           gap: 16px;
+           margin-bottom: 30px;
+       }
+
+
+       .btn-primary {
+           display: inline-flex;
+           align-items: center;
+           gap: 10px;
+           padding: 14px 32px;
+           background: linear-gradient(135deg, #56a6fa 0%, #667eea 100%);
+           border: none;
+           border-radius: 12px;
+           color: white;
+           font-size: 15px;
+           font-weight: 600;
+           cursor: pointer;
+           text-decoration: none;
+           box-shadow: 0 10px 20px rgba(86, 166, 250, 0.3);
+       }
+
+
+       .btn-secondary {
+           display: inline-flex;
+           align-items: center;
+           gap: 10px;
+           padding: 14px 32px;
+           background: rgba(255, 255, 255, 0.05);
+           border: 1px solid rgba(255, 255, 255, 0.1);
+           border-radius: 12px;
+           color: white;
+           font-size: 15px;
+           font-weight: 500;
+           cursor: pointer;
+           text-decoration: none;
+       }
+
+
+       .btn-primary:hover,
+       .btn-secondary:hover {
+           transform: translateY(-2px);
+           transition: 0.2s;
+       }
+
+
+       /* METRICS ROW (Like Ref) */
+       .metrics-row {
+           display: flex;
+           gap: 50px;
+           justify-content: center;
+           margin: 30px 0 50px;
+           padding-top: 30px;
+           border-top: 1px solid rgba(255, 255, 255, 0.1);
+           width: 100%;
+           max-width: 800px;
+       }
+
+
+       .metric-item {
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+       }
+
+
+       .metric-val {
+           font-size: 2.5rem;
+           font-weight: 800;
+           color: #fff;
+           background: linear-gradient(to bottom, #fff, #999);
+           -webkit-background-clip: text;
+           -webkit-text-fill-color: transparent;
+           line-height: 1;
+       }
+
+
+       .metric-label {
+           font-size: 0.8rem;
+           text-transform: uppercase;
+           color: #666;
+           letter-spacing: 1px;
+           margin-top: 8px;
+           font-weight: 600;
+       }
+
+
+       /* FLOATING PRINT BUTTON */
+       .btn-print {
+           position: fixed;
+           bottom: 30px;
+           right: 30px;
+           background: #56a6fa;
+           color: white;
+           border: none;
+           padding: 12px 24px;
+           border-radius: 50px;
+           cursor: pointer;
+           font-weight: 600;
+           box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+           display: flex;
+           align-items: center;
+           gap: 8px;
+           z-index: 100;
+           transition: transform 0.2s;
+       }
+
+
+       .btn-print:hover {
+           transform: translateY(-3px);
+       }
+
+
+
+
+
+
+       /* SECTIONS */
+       .section-wrap {
+           padding: 100px 20px;
+           border-top: 1px solid rgba(255, 255, 255, 0.05);
+           max-width: 1200px;
+           margin: 0 auto;
+       }
+
+
+       .section-header {
+           text-align: center;
+           margin-bottom: 60px;
+       }
+
+
+       .section-header h2 {
+           font-size: 36px;
+           margin-bottom: 15px;
+       }
+
+
+       .section-header p {
+           color: #888;
+           font-size: 1.1rem;
+       }
+
+
+       /* GUIDE */
+       .guide-steps {
+           display: grid;
+           grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+           gap: 40px;
+       }
+
+
+       .guide-step {
+           background: rgba(255, 255, 255, 0.02);
+           border: 1px solid rgba(255, 255, 255, 0.08);
+           padding: 30px;
+           border-radius: 20px;
+           transition: 0.3s;
+           position: relative;
+           overflow: hidden;
+       }
+
+
+       .step-num {
+           font-size: 4rem;
+           font-weight: 800;
+           color: rgba(255, 255, 255, 0.03);
+           position: absolute;
+           top: -10px;
+           right: 20px;
+       }
+
+
+       .step-title {
+           font-size: 1.25rem;
+           font-weight: 600;
+           margin-bottom: 10px;
+           color: #fff;
+       }
+
+
+       .step-desc {
+           color: #888;
+           line-height: 1.6;
+           font-size: 0.95rem;
+       }
+
+
+       /* FAQ */
+       .faq-grid {
+           display: grid;
+           grid-template-columns: 1fr 1fr;
+           gap: 30px;
+           max-width: 1000px;
+           margin: 0 auto;
+       }
+
+
+       details {
+           background: rgba(255, 255, 255, 0.02);
+           border: 1px solid rgba(255, 255, 255, 0.05);
+           border-radius: 12px;
+           overflow: hidden;
+       }
+
+
+       details[open] {
+           background: rgba(255, 255, 255, 0.04);
+           border-color: rgba(168, 85, 247, 0.3);
+       }
+
+
+       summary {
+           padding: 20px;
+           cursor: pointer;
+           font-weight: 500;
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           list-style: none;
+           color: #eee;
+       }
+
+
+       summary::after {
+           content: '+';
+           font-size: 1.5rem;
+           color: #888;
+       }
+
+
+       details[open] summary::after {
+           content: '-';
+           color: #fff;
+       }
+
+
+       .faq-answer {
+           padding: 0 20px 20px;
+           color: #aaa;
+           line-height: 1.6;
+           border-top: 1px solid rgba(255, 255, 255, 0.05);
+           margin-top: 10px;
+           padding-top: 15px;
+       }
+
+
+       /* ARCH */
+       .arch-container {
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           gap: 0;
+       }
+
+
+       .arch-node {
+           background: rgba(255, 255, 255, 0.05);
+           border: 1px solid rgba(255, 255, 255, 0.1);
+           border-radius: 16px;
+           padding: 25px;
+           text-align: center;
+           width: 300px;
+           color: #fff;
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           gap: 8px;
+           z-index: 2;
+           position: relative;
+       }
+
+
+       .arch-node strong {
+           font-size: 1.1rem;
+       }
+
+
+       .arch-node ul {
+           text-align: left;
+           padding-left: 20px;
+           color: #aaa;
+           font-size: 0.85rem;
+           width: 100%;
+           margin: 8px 0 0;
+       }
+
+
+       .connector-horizontal {
+           position: absolute;
+           top: 0;
+           left: 50%;
+           transform: translateX(-50%);
+           width: 680px;
+           height: 20px;
+           border-top: 2px solid rgba(255, 255, 255, 0.2);
+           border-left: 2px solid rgba(255, 255, 255, 0.2);
+           border-right: 2px solid rgba(255, 255, 255, 0.2);
+           border-radius: 20px 20px 0 0;
+       }
+
+
+       .connector {
+           width: 2px;
+           height: 40px;
+           background: rgba(255, 255, 255, 0.2);
+           margin: 0 auto;
+       }
+
+
+       .arch-split {
+           display: flex;
+           gap: 40px;
+           position: relative;
+           padding: 20px 0;
+           justify-content: center;
+       }
+
+
+       /* CONSOLE */
+       .large-preview {
+           width: 100%;
+           max-width: 1100px;
+           height: 500px;
+           background: #0c0d10;
+           border: 1px solid rgba(255, 255, 255, 0.1);
+           border-radius: 20px;
+           overflow: hidden;
+           display: flex;
+           flex-direction: column;
+       }
+
+
+       .console-toggle {
+           background: transparent;
+           border: none;
+           color: #888;
+           padding: 10px 20px;
+           cursor: pointer;
+       }
+
+
+       .console-toggle.active {
+           background: rgba(255, 255, 255, 0.1);
+           color: #fff;
+           border-radius: 20px;
+       }
+
+
+       .docs-table {
+           width: 100%;
+           border-collapse: collapse;
+           margin-top: 30px;
+       }
+
+
+       .docs-table th,
+       .docs-table td {
+           text-align: left;
+           padding: 15px;
+           border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+       }
+
+
+       .docs-table th {
+           color: #888;
+           text-transform: uppercase;
+           font-size: 0.8rem;
+       }
+
+
+       .docs-table td {
+           color: #ddd;
+       }
+
+
+       .badge {
+           padding: 4px 10px;
+           border-radius: 20px;
+           font-size: 0.75rem;
+           font-weight: 600;
+       }
+
+
+       .bg-green {
+           background: rgba(34, 197, 94, 0.15);
+           color: #4ade80;
+       }
+
+
+       .bg-blue {
+           background: rgba(59, 130, 246, 0.15);
+           color: #60a5fa;
+       }
+
+
+       @media(max-width: 800px) {
+
+
+           .metrics-row,
+           .arch-split,
+           .faq-grid {
+               flex-direction: column;
+               align-items: center;
+           }
+
+
+           .connector-horizontal {
+               display: none;
+           }
+       }
+
+
+       @media print {
+
+
+           .btn-print,
+           .live-feed-widget,
+           .hero-buttons {
+               display: none;
+           }
+
+
+           body {
+               background: white;
+               color: black;
+           }
+
+
+           .gradient-text {
+               -webkit-text-fill-color: black;
+           }
+
+
+           .section-wrap {
+               padding: 20px 0;
+               border: none;
+           }
+       }
+
+
+       @keyframes textReveal {
+           to {
+               opacity: 1;
+               transform: translateY(0) scale(1);
+           }
+       }
+
+
+       /* ANIMATIONS */
+       .fade-in-up {
+           opacity: 0;
+           transform: translateY(30px);
+           animation: fadeInUp 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+       }
+
+
+       @keyframes fadeInUp {
+           to {
+               opacity: 1;
+               transform: translateY(0);
+           }
+       }
+   </style>
+</head>
+
+
+<body class="broadcast-page">
+
+
+   <!-- SCROLL PROGRESS -->
+   <div id="progress-bar"
+       style="position:fixed; top:0; left:0; height:4px; background:linear-gradient(90deg, #56a6fa, #a855f7); width:0%; z-index:1000; transition:width 0.1s;">
+   </div>
+
+
+   <!-- PRINT BUTTON -->
+   <button class="btn-print" onclick="window.print()"><i data-lucide="download"></i> Download PDF</button>
+
+
+   <!-- 1. HERO -->
+   <section class="hero-section">
+       <div class="hero-content fade-in-up">
+           <div class="hero-badge"><i data-lucide="sparkles" width="14"></i> <span>Platform Release 3.0</span></div>
+           <h1><span class="gradient-text">Convergence</span></h1>
+           <p class="hero-description">Unifying Autonomous Swarms and Predictive MLOps.</p>
+
+
+           <div class="metrics-row">
+               <div class="metric-item">
+                   <span class="metric-val">~1.5s</span>
+                   <span class="metric-label">Latency Target</span>
+               </div>
+               <div class="metric-item">
+                   <span class="metric-val">99.9%</span>
+                   <span class="metric-label">Uptime SLA</span>
+               </div>
+               <div class="metric-item">
+                   <span class="metric-val">Enterprise</span>
+                   <span class="metric-label">Grade Security</span>
+               </div>
+           </div>
+
+
+           <div class="hero-buttons">
+               <a href="/login" id="launch-console-btn" class="btn-primary" title="Opens the Dashboard Console (redirects to IKS login)"><i data-lucide="play-circle" width="16"></i> Dashboard Console</a>
+               <a href="#guide" class="btn-secondary"><i data-lucide="book-open" width="16"></i> User Guide</a>
+           </div>
+
+
+
+
+       </div>
+   </section>
+
+
+   <!-- 1.5 RELEASE HIGHLIGHTS -->
+   <section class="section-wrap">
+       <div class="section-header">
+           <h2>Release <span class="gradient-text">Highlights</span></h2>
+           <p>IKS Intelligence Platform v2.0 Features</p>
+       </div>
+
+
+       <div class="guide-steps">
+           <!-- Optimix -->
+           <div class="guide-step">
+               <div class="step-icon"><i data-lucide="bar-chart-2"></i></div>
+               <div class="step-title">Optimix Dashboard</div>
+               <div class="step-desc">
+                   Dedicated command center for GIA & AXIA. Track financial visibility ($AR, Cash) and inventory burn
+                   rates. Powered primarily by live Google Sheets.
+               </div>
+           </div>
+
+
+           <!-- Agentic AI -->
+           <div class="guide-step">
+               <div class="step-icon"><i data-lucide="bot"></i></div>
+               <div class="step-title">Agentic AI Hub</div>
+               <div class="step-desc">
+                   Centralized Agent Catalog and interactive Sandbox. Includes <strong>Neural Trace</strong> for
+                   debugging complex agent reasoning trails.
+               </div>
+           </div>
+
+
+           <!-- MLOps -->
+           <div class="guide-step">
+               <div class="step-icon"><i data-lucide="activity"></i></div>
+               <div class="step-title">MLOps Observatory</div>
+               <div class="step-desc">
+                   Enterprise-grade monitoring with real-time System Health, Drift Detection, and performance metrics
+                   (Latency, Error Rates).
+               </div>
+           </div>
+
+
+           <!-- Platform -->
+           <div class="guide-step">
+               <div class="step-icon"><i data-lucide="layers"></i></div>
+               <div class="step-title">Platform & Security</div>
+               <div class="step-desc">
+                   New "Cloudy Blue" light theme, simplified Docker deployment (Port 8510), and unified LDAP
+                   authentication with RBAC.
+               </div>
+           </div>
+       </div>
+   </section>
+
+
+   <!-- 1.7 ENGINEERING DNA -->
+   <section class="section-wrap">
+       <div class="section-header">
+           <h2>Engineering <span class="gradient-text">DNA</span></h2>
+           <p>Built from scratch using modern, high-performance capability layers.</p>
+       </div>
+       <div class="faq-grid">
+           <div class="arch-node" style="width: 100%; text-align: left; border-color: rgba(86, 166, 250, 0.3);">
+               <div style="display:flex; justify-content:space-between; align-items:center;">
+                   <strong>Frontend Core</strong>
+                   <i data-lucide="layout" style="opacity:0.5"></i>
+               </div>
+               <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+                   <span class="badge bg-blue">React 18</span>
+                   <span class="badge bg-blue">Vite</span>
+                   <span class="badge bg-blue">Framer Motion</span>
+                   <span class="badge bg-blue">Recharts</span>
+                   <span class="badge bg-blue">Tailwind-compat</span>
+               </div>
+           </div>
+
+
+           <div class="arch-node" style="width: 100%; text-align: left; border-color: rgba(168, 85, 247, 0.3);">
+               <div style="display:flex; justify-content:space-between; align-items:center;">
+                   <strong>Backend Nexus</strong>
+                   <i data-lucide="server" style="opacity:0.5"></i>
+               </div>
+               <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+                   <span class="badge bg-green">Flask API</span>
+                   <span class="badge bg-green">Gunicorn</span>
+                   <span class="badge bg-green">LDAP3</span>
+                   <span class="badge bg-green">Pandas</span>
+                   <span class="badge bg-green">Google Sheets API</span>
+               </div>
+           </div>
+
+
+           <div class="arch-node" style="width: 100%; text-align: left; border-color: rgba(236, 72, 153, 0.3);">
+               <div style="display:flex; justify-content:space-between; align-items:center;">
+                   <strong>Infrastructure</strong>
+                   <i data-lucide="container" style="opacity:0.5"></i>
+               </div>
+               <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+                   <span class="badge" style="background:rgba(255,255,255,0.1)">Docker</span>
+                   <span class="badge" style="background:rgba(255,255,255,0.1)">Multi-Stage Build</span>
+                   <span class="badge" style="background:rgba(255,255,255,0.1)">RBAC</span>
+                   <span class="badge" style="background:rgba(255,255,255,0.1)">Encrypted Env</span>
+               </div>
+           </div>
+
+
+           <div class="arch-node" style="width: 100%; text-align: left; border-color: orange;">
+               <div style="display:flex; justify-content:space-between; align-items:center;">
+                   <strong>AI & Analytics</strong>
+                   <i data-lucide="cpu" style="opacity:0.5"></i>
+               </div>
+               <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+                   <span class="badge bg-blue">Scikit-Learn</span>
+                   <span class="badge bg-blue">Neural Trace</span>
+                   <span class="badge bg-blue">Drift Algorithms</span>
+                   <span class="badge bg-blue">Predictive modeling</span>
+               </div>
+           </div>
+       </div>
+   </section>
+
+
+   <!-- 1.8 AGENT SQUAD -->
+   <section class="section-wrap">
+       <div class="section-header">
+           <h2>Meet the <span class="gradient-text">Squad</span></h2>
+           <p>Our autonomous workforce, visualized.</p>
+       </div>
+       <div class="guide-steps" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+           <div class="guide-step" style="text-align:center;">
+               <div class="step-icon" style="background: rgba(59, 130, 246, 0.2); color:#60a5fa"><i
+                       data-lucide="code"></i></div>
+               <div class="step-title">The Coder</div>
+               <div class="step-desc" style="font-size:0.85rem">Generates boilerplate, refactors legacy code, and
+                   enforces patterns.</div>
+           </div>
+           <div class="guide-step" style="text-align:center;">
+               <div class="step-icon" style="background: rgba(16, 185, 129, 0.2); color:#34d399"><i
+                       data-lucide="search"></i></div>
+               <div class="step-title">The Researcher</div>
+               <div class="step-desc" style="font-size:0.85rem">Scans documentation, aggregates data, and provides
+                   context.</div>
+           </div>
+           <div class="guide-step" style="text-align:center;">
+               <div class="step-icon" style="background: rgba(236, 72, 153, 0.2); color:#f472b6"><i
+                       data-lucide="shield-check"></i></div>
+               <div class="step-title">The Verifier</div>
+               <div class="step-desc" style="font-size:0.85rem">Validates outputs, runs test suites, and checks for
+                   drift.</div>
+           </div>
+           <div class="guide-step" style="text-align:center;">
+               <div class="step-icon" style="background: orange; color:#fff"><i data-lucide="zap"></i></div>
+               <div class="step-title">The Executor</div>
+               <div class="step-desc" style="font-size:0.85rem">Deploys changes, runs pipelines, and manages
+                   infrastructure.</div>
+           </div>
+       </div>
+   </section>
+
+
+   <!-- 2. ARCHITECTURE -->
+   <section class="section-wrap">
+       <div class="section-header">
+           <h2>System <span class="gradient-text">Architecture</span></h2>
+           <p>End-to-end capabilities breakdown.</p>
+       </div>
+       <div class="arch-container">
+           <div class="arch-node" style="border-color: rgba(66,133,244,0.5);">
+               <i data-lucide="database"></i><strong>GCP Data Lake</strong>
+               <ul>
+                   <li>FHIR Ingestion</li>
+                   <li>Automated De-ID</li>
+               </ul>
+           </div>
+           <div class="connector"></div>
+           <div class="arch-split">
+               <div class="connector-horizontal"></div>
+               <div class="arch-node" style="border-color: rgba(59,130,246,0.5);">
+                   <i data-lucide="brain"></i><strong>Agentic Swarm</strong>
+                   <ul>
+                       <li>Swarm Orchestrator</li>
+                       <li>Neural Trace v2.0</li>
+                       <li>Agent Registry</li>
+                       <li>Sandbox Env</li>
+                   </ul>
+               </div>
+               <div class="arch-node" style="border-color: rgba(16,185,129,0.5);">
+                   <i data-lucide="activity"></i><strong>MLOps Engine</strong>
+                   <ul>
+                       <li>Drift Monitor</li>
+                       <li>Risk Scoring</li>
+                       <li>Latency Tracking</li>
+                   </ul>
+               </div>
+               <div class="arch-node" style="border-color: rgba(236, 72, 153, 0.5);">
+                   <i data-lucide="bar-chart-2"></i><strong>Optimix Dashboard</strong>
+                   <ul>
+                       <li>Inventory Analytics</li>
+                       <li>Financial Flow ($AR)</li>
+                       <li>Sheets API Nexus</li>
+                       <li>Predictive Backfill</li>
+                   </ul>
+               </div>
+           </div>
+           <div class="connector"></div>
+           <div class="arch-node" style="border-style:dashed; border-color:orange;">
+               <i data-lucide="alert-triangle"></i><strong>Validation Sandbox</strong>
+               <ul>
+                   <li>Human Review</li>
+                   <li>Compliance Check</li>
+               </ul>
+           </div>
+           <div class="connector"></div>
+           <div class="arch-node" style="border-color: rgba(168, 85, 247, 0.5);">
+               <i data-lucide="check-circle"></i><strong>Resolution Core</strong>
+               <ul>
+                   <li>API</li>
+                   <li>Exceptional handling</li>
+                   <li>Lineage</li>
+               </ul>
+           </div>
+
+
+           <!-- NEW INFRA FRAMEWORK -->
+           <div class="connector"></div>
+           <div class="arch-node" style="border-color: rgba(255, 255, 255, 0.3); background: rgba(255,255,255,0.05);">
+               <i data-lucide="server"></i><strong>Platform Infrastructure</strong>
+               <ul>
+                   <li>Gunicorn Prod Server</li>
+                   <li>LDAP & RBAC Auth</li>
+                   <li>Docker Compliance</li>
+                   <li>Security Hardening</li>
+               </ul>
+           </div>
+       </div>
+   </section>
+
+
+   <!-- 2.5 DETAILED CHANGELOG -->
+   <section class="section-wrap">
+       <div class="section-header">
+           <h2>Detailed <span class="gradient-text">Changelog</span></h2>
+           <p>Comprehensive breakdown of all system updates.</p>
+       </div>
+       <div class="faq-grid" style="grid-template-columns: 1fr;">
+           <details>
+               <summary>Optimix (Operational Intelligence)</summary>
+               <div class="faq-answer">
+                   <ul style="padding-left: 20px; margin: 0;">
+                       <li><strong>New Dashboard Module</strong>: Dedicated accessible tab for GIA & AXIA clients.</li>
+                       <li><strong>Financial Metrics</strong>: Real-time tracking of Total Open Claims, $AR, and Cash
+                           Collected.</li>
+                       <li><strong>Inventory Analytics</strong>: Burn Rate visualization, Workable vs. Backlog
+                           breakdown.</li>
+                       <li><strong>Google Sheets Backend</strong>: Direct integration with private Sheets via
+                           Spreadsheet ID.</li>
+                       <li><strong>Mock Data Fallback</strong>: Automatic fallback to simulated data if API connection
+                           fails.</li>
+                       <li><strong>Date filtering</strong>: Daily activity tracking with trend line analysis.</li>
+                   </ul>
+               </div>
+           </details>
+           <details>
+               <summary>Agentic AI (Swarm Ops)</summary>
+               <div class="faq-answer">
+                   <ul style="padding-left: 20px; margin: 0;">
+                       <li><strong>Agent Catalog</strong>: Centralized library of all active agents (Coder, Researcher,
+                           Verifier).</li>
+                       <li><strong>Interactive Sandbox</strong>: In-browser chat interface to test agent capabilities
+                           safely.</li>
+                       <li><strong>Neural Trace v2.0</strong>: Fixed "sticky" scrolling issues for smoother reasoning
+                           trail debugging.</li>
+                       <li><strong>Responsive Layout</strong>: Improved mobile compatibility for trace logs and agent
+                           details.</li>
+                       <li><strong>Status Indicators</strong>: Real-time "Live" / "Offline" status for each agent.</li>
+                   </ul>
+               </div>
+           </details>
+           <details>
+               <summary>MLOps Observatory (Model Health)</summary>
+               <div class="faq-answer">
+                   <ul style="padding-left: 20px; margin: 0;">
+                       <li><strong>System Health Monitor</strong>: Green/Red status dashboard for API endpoints.</li>
+                       <li><strong>Drift Detection</strong>: Automated alerts when model outputs diverge >5% from
+                           baseline.</li>
+                       <li><strong>Light Mode Fixes</strong>: complete UI overhaul for MLOps cards to support the new
+                           "Cloudy Blue" theme.</li>
+                       <li><strong>Performance Metrics</strong>: Latency charts (P95, P99) and Error Rate tracking.
+                       </li>
+                   </ul>
+               </div>
+           </details>
+           <details>
+               <summary>Platform Infrastructure</summary>
+               <div class="faq-answer">
+                   <ul style="padding-left: 20px; margin: 0;">
+                       <li><strong>Production Server</strong>: Migrated from Flask Dev to Gunicorn (4 workers, 2
+                           threads).</li>
+                       <li><strong>Security Hardening</strong>: API Key auth for Webhooks, disabled debug routes.</li>
+                       <li><strong>Unified Auth</strong>: LDAP integration with "Cloudy Blue" login page & RBAC
+                           support.</li>
+                       <li><strong>Dynamic Release Notes</strong>: Updates feed powered by Google Sheets (no code
+                           deploy needed).</li>
+                       <li><strong>Docker Optimization</strong>: Simplified run command (Port 8510 default) + Non-root
+                           user execution.</li>
+                       <li><strong>UI/UX Overhaul</strong>: New "Cloudy Blue" light theme with high-contrast palette.
+                       </li>
+                   </ul>
+               </div>
+           </details>
+       </div>
+   </section>
+
+
+   <!-- 3. USER GUIDE -->
+   <section class="section-wrap" id="guide">
+       <div class="section-header">
+           <h2>User <span class="gradient-text">Guide</span></h2>
+           <p>Master the platform in 3 simple steps.</p>
+       </div>
+       <div class="guide-steps">
+           <div class="guide-step">
+               <div class="step-num">01</div>
+               <div class="step-icon"><i data-lucide="monitor"></i></div>
+               <div class="step-title">Monitor Operations</div>
+               <div class="step-desc">Use the <strong>Agent View</strong> to track real-time claim submissions. Watch
+                   for Green status indicators on the 'Overview' tab.</div>
+           </div>
+           <div class="guide-step">
+               <div class="step-num">02</div>
+               <div class="step-icon"><i data-lucide="git-branch"></i></div>
+               <div class="step-title">Resolve Alerts</div>
+               <div class="step-desc">When a 'Drift Alert' appears in the <strong>MLOps View</strong>, click the audit
+                   log. The system routes alerts to Sandbox.</div>
+           </div>
+           <div class="guide-step">
+               <div class="step-num">03</div>
+               <div class="step-icon"><i data-lucide="check-circle"></i></div>
+               <div class="step-title">Approve & Deploy</div>
+               <div class="step-desc">Review retrained models in the Sandbox. Once approved, the <strong>Resolution
+                       Core</strong> promotes the model.</div>
+           </div>
+       </div>
+   </section>
+
+
+   <!-- 4. DOCS -->
+   <section class="section-wrap">
+       <div class="section-header">
+           <h2>API <span class="gradient-text">Docs</span></h2>
+           <p>Developer Integration.</p>
+       </div>
+       <table class="docs-table">
+           <thead>
+               <tr>
+                   <th>Endpoint</th>
+                   <th>Method</th>
+                   <th>Description</th>
+                   <th>Status</th>
+               </tr>
+           </thead>
+           <tbody>
+               <tr>
+                   <td>/api/optimix/summary</td>
+                   <td><span class="badge bg-green">GET</span></td>
+                   <td>Retrieve live operational KPIs & Burn Rate.</td>
+                   <td><span class="badge bg-green">Active</span></td>
+               </tr>
+               <tr>
+                   <td>/api/optimix/webhook</td>
+                   <td><span class="badge bg-blue">POST</span></td>
+                   <td>Push real-time inventory updates from Sheets.</td>
+                   <td><span class="badge bg-green">Active</span></td>
+               </tr>
+           </tbody>
+       </table>
+   </section>
+
+
+   <!-- 5. FAQ -->
+   <section class="section-wrap">
+       <div class="section-header">
+           <h2>Frequent <span class="gradient-text">Questions</span></h2>
+           <p>Launch readiness info.</p>
+       </div>
+       <div class="faq-grid">
+           <details open>
+               <summary>How often do models retrain?</summary>
+               <div class="faq-answer">Models are evaluated every 6 hours. If drift exceeds 0.05, retraining triggers
+                   automatically in the sandbox.</div>
+           </details>
+           <details>
+               <summary>Is patient data secure?</summary>
+               <div class="faq-answer">Yes. All data undergoes automated de-identification at the ingestion layer
+                   (Layer 1).</div>
+           </details>
+           <details>
+               <summary>What if an agent fails?</summary>
+               <div class="faq-answer">The swarm controller automatically respawns the agent. If failure persists, it
+                   routes to human review.</div>
+           </details>
+           <details>
+               <summary>Can I export reports?</summary>
+               <div class="faq-answer">Yes. Navigate to 'System Health' in the console and click 'Export CSV' to get
+                   metrics.</div>
+           </details>
+       </div>
+   </section>
+
+
+   <!-- 6. CONSOLE -->
+   <section class="section-wrap" id="console">
+       <div class="section-header">
+           <h2>Interactive <span class="gradient-text">Nexus</span></h2>
+           <p>Live architectural simulation.</p>
+       </div>
+
+
+       <div class="large-preview">
+           <!-- Console Header -->
+           <div
+               style="padding:15px; background:#111; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1);">
+               <div style="display:flex; align-items:center; gap:15px;">
+                   <div style="display:flex; gap:6px;">
+                       <div style="width:10px; height:10px; border-radius:50%; background:#ef4444;"></div>
+                       <div style="width:10px; height:10px; border-radius:50%; background:#f59e0b;"></div>
+                       <div style="width:10px; height:10px; border-radius:50%; background:#22c55e;"></div>
+                   </div>
+                   <span style="font-family:monospace; font-size:13px; color:#888;">root@iks-nexus:~#
+                       ./launch_swarms.sh</span>
+               </div>
+               <div style="font-size:12px; font-family:monospace; color:#4ade80;">
+                   <span id="sim-status">ONLINE</span> <span class="live-dot"
+                       style="display:inline-block; margin-left:5px;"></span>
+               </div>
+           </div>
+
+
+           <div style="flex:1; display:flex; font-family: 'Courier New', Courier, monospace;">
+               <!-- Left: Arch Logic Stream -->
+               <div
+                   style="width:350px; border-right:1px solid rgba(255,255,255,0.1); background:#0c0d10; padding:20px; display:flex; flex-direction:column;">
+                   <div
+                       style="color:#56a6fa; margin-bottom:15px; font-weight:bold; font-size:12px; letter-spacing:1px;">
+                       SYSTEM LOGS</div>
+                   <div id="console-logs"
+                       style="flex:1; overflow:hidden; font-size:11px; color:#aaa; line-height:1.6; display:flex; flex-direction:column-reverse;">
+                       <!-- Logs injected by JS -->
+                   </div>
+               </div>
+
+
+               <!-- Right: Visualizer -->
+               <div style="flex:1; padding:30px; background:#08090b; position:relative; overflow:hidden;">
+                   <!-- Agent Nodes -->
+                   <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:20px; margin-bottom:40px;">
+                       <div class="sim-card">
+                           <div style="color:#a855f7; font-size:11px; margin-bottom:5px;">AGENT: RESEARCHER</div>
+                           <div style="font-size:24px; font-weight:bold; color:#fff;" id="metric-claims">842</div>
+                           <div style="font-size:11px; color:#666;">Docs Processed</div>
+                       </div>
+                       <div class="sim-card">
+                           <div style="color:#ec4899; font-size:11px; margin-bottom:5px;">MODEL: DRIFT</div>
+                           <div style="font-size:24px; font-weight:bold; color:#fff;" id="metric-drift">0.03%</div>
+                           <div style="font-size:11px; color:#666;">Divergence</div>
+                       </div>
+                   </div>
+
+
+                   <!-- Animation Area -->
+                   <div
+                       style="position:relative; height:150px; border:1px dashed rgba(255,255,255,0.1); border-radius:12px; display:flex; align-items:center; justify-content:space-around;">
+                       <div class="sim-node" id="node-ingest"><i data-lucide="database"></i></div>
+                       <div class="sim-line"></div>
+                       <div class="sim-node active" id="node-agent"><i data-lucide="bot"></i></div>
+                       <div class="sim-line"></div>
+                       <div class="sim-node" id="node-resolve"><i data-lucide="check"></i></div>
+
+
+                       <!-- Floating particle -->
+                       <div id="sim-particle"
+                           style="position:absolute; left:20%; top:50%; width:8px; height:8px; background:#fff; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 10px #fff;">
+                       </div>
+                   </div>
+               </div>
+           </div>
+       </div>
+
+
+       <style>
+           .sim-card {
+               background: rgba(255, 255, 255, 0.03);
+               padding: 15px;
+               border-radius: 8px;
+               border: 1px solid rgba(255, 255, 255, 0.05);
+           }
+
+
+           .sim-node {
+               width: 40px;
+               height: 40px;
+               border-radius: 50%;
+               background: #222;
+               border: 1px solid #444;
+               display: flex;
+               align-items: center;
+               justify-content: center;
+               color: #666;
+               transition: 0.3s;
+               z-index: 2;
+           }
+
+
+           .sim-node.active {
+               background: rgba(86, 166, 250, 0.2);
+               border-color: #56a6fa;
+               color: #56a6fa;
+               box-shadow: 0 0 15px rgba(86, 166, 250, 0.3);
+           }
+
+
+           .sim-line {
+               flex: 1;
+               height: 1px;
+               background: rgba(255, 255, 255, 0.1);
+           }
+       </style>
+   </section>
+
+
+   <!-- 7. GLOBAL FOOTER -->
+   <footer
+       style="border-top:1px solid rgba(255,255,255,0.1); margin-top:80px; padding:40px 20px; text-align:center; color:rgba(255,255,255,0.4); font-size:14px;">
+       <div style="margin-bottom:20px;">
+           <i data-lucide="cpu" style="width:20px; vertical-align:middle; margin-right:8px;"></i>
+           <span>Enterprise Intelligence • Clinical Grade AI • Elastic Scale</span>
+       </div>
+       <p>&copy; 2026 IKS Intelligence Systems. All rights reserved.</p>
+       <div style="margin-top:15px; display:flex; gap:20px; justify-content:center; opacity:0.7;">
+           <span>Privacy Policy</span>
+           <span>Terms of Service</span>
+           <span>System Status</span>
+       </div>
+   </footer>
+
+
+   <script>
+       lucide.createIcons();
+
+
+       // SCROLL PROGRESS & PARALLAX
+       window.addEventListener('scroll', () => {
+           const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+           const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+           const scrolled = (winScroll / height) * 100;
+           document.getElementById("progress-bar").style.width = scrolled + "%";
+
+
+           // Parallax
+           document.querySelector('.hero-section').style.backgroundPositionY = (winScroll * 0.5) + "px";
+       });
+
+
+       // SIMULATION LOGIC
+       const logsContainer = document.getElementById('console-logs');
+       const metricClaims = document.getElementById('metric-claims');
+       const metricDrift = document.getElementById('metric-drift');
+       const particle = document.getElementById('sim-particle');
+       const nodes = ['node-ingest', 'node-agent', 'node-resolve'];
+
+
+       const logMessages = [
+           "INFO: Ingesting FHIR bundle #9921...",
+           "SUCCESS: De-ID complete.",
+           "AGENT: 'Researcher' analyzing plan docs...",
+           "AGENT: Context retrieved (Confidence: 0.98)",
+           "MLOPS: Drift check passed (0.021)",
+           "RESOLVE: API Write-back successful.",
+           "INFO: Worker thread spawned [pid: 4022]",
+           "OPTIMIX: Sheets sync initiated...",
+           "OPTIMIX: Inventory updated."
+       ];
+
+
+       let claimCount = 842;
+
+
+       function addLog() {
+           const msg = logMessages[Math.floor(Math.random() * logMessages.length)];
+           const div = document.createElement('div');
+           const time = new Date().toISOString().split('T')[1].split('.')[0];
+           div.innerHTML = `<span style="color:#666">[${time}]</span> ${msg}`;
+           logsContainer.prepend(div);
+           if (logsContainer.children.length > 12) logsContainer.lastChild.remove();
+
+
+           // Randomly update metrics
+           if (Math.random() > 0.7) {
+               claimCount++;
+               metricClaims.innerText = claimCount;
+           }
+       }
+
+
+       // Animation Loop
+       let progress = 0;
+       function animate() {
+           progress += 1;
+           if (progress > 100) progress = 0;
+
+
+           // Move particle
+           // 0-33: Ingest->Agent, 33-66: Agent->Resolve, 66-100: Reset
+           let leftPos = 20; // Start at Ingest
+
+
+           if (progress < 50) {
+               // Moving to center
+               leftPos = 20 + ((progress / 50) * 30); // 20 -> 50
+               updateNodes(0);
+           } else {
+               // Moving to end
+               leftPos = 50 + (((progress - 50) / 50) * 30); // 50 -> 80
+               updateNodes(1);
+           }
+
+
+           particle.style.left = leftPos + '%';
+
+
+           requestAnimationFrame(animate);
+       }
+
+
+       function updateNodes(stage) {
+           document.querySelectorAll('.sim-node').forEach(n => n.classList.remove('active'));
+           if (stage === 0) {
+               document.getElementById('node-ingest').classList.add('active');
+               document.getElementById('node-agent').classList.add('active');
+           } else {
+               document.getElementById('node-agent').classList.add('active');
+               document.getElementById('node-resolve').classList.add('active');
+           }
+       }
+
+
+       // Start
+       setInterval(addLog, 800);
+       animate();
+
+       // FORCE LAUNCH BUTTON TO REDIRECT TO LOGIN (avoid in-page hash scroll)
+       const launchBtn = document.getElementById('launch-console-btn');
+       if (launchBtn) {
+           launchBtn.addEventListener('click', (e) => {
+               e.preventDefault();
+               window.location.href = '/login';
+           });
+       }
+
+   </script>
+</body>
+
+
+</html>

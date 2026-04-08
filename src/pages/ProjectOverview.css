@@ -1,0 +1,299 @@
+/* ============================================================
+   IKS HEALTHCARE - PROJECT OVERVIEW
+   Kanban Board Styling
+   ============================================================ */
+
+.project-board-page {
+    /* Allow page to scroll naturally */
+    min-height: 100vh;
+    padding-top: var(--navbar-height);
+    position: relative;
+    padding-bottom: var(--space-20);
+}
+
+.project-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.project-bg-orb {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.2;
+}
+
+.project-bg-orb--1 {
+    background: var(--aurora-cyan);
+    top: -200px;
+    right: 0;
+}
+
+.container-fluid {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    /* Wider for board */
+    margin: 0 auto;
+    padding: 0 var(--space-6);
+}
+
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: var(--space-8);
+    margin-bottom: var(--space-8);
+}
+
+.project-title {
+    font-size: var(--text-3xl);
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.project-subtitle {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+}
+
+.project-actions {
+    display: flex;
+    gap: var(--space-4);
+}
+
+/* KANBAN BOARD */
+.kanban-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-6);
+    align-items: start;
+    /* Don't stretch height */
+    overflow-x: auto;
+    /* Just in case screens are small */
+    padding-bottom: 20px;
+}
+
+.kanban-column {
+    background: rgba(13, 17, 23, 0.4);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    /* remove max-height so no inner scroll */
+    min-height: 200px;
+}
+
+.kanban-column-header {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    position: sticky;
+    top: 0;
+    background: inherit;
+    /* Keep header opaque if scrolling happens? */
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    z-index: 2;
+}
+
+.kanban-column-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.kanban-column-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kanban-column-count {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.kanban-column-content {
+    /* Allow content to expand column height */
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.empty-column-state {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 20px 0;
+    font-style: italic;
+    opacity: 0.5;
+}
+
+/* Kanban Card */
+.kanban-card {
+    background: var(--glass-bg);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    cursor: grab;
+    transition: all var(--transition-fast);
+    position: relative;
+    /* Removed heavy box-shadow for cleaner look */
+}
+
+.kanban-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--glass-border-active);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.kanban-card:active {
+    cursor: grabbing;
+}
+
+.kanban-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-3);
+}
+
+.kanban-client-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding: 0;
+    background: transparent;
+}
+
+.kanban-client-logo {
+    font-weight: 700;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.kanban-card-menu {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0 4px;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.kanban-card-menu:hover {
+    color: var(--text-primary);
+}
+
+.kanban-card-title {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+    line-height: 1.4;
+}
+
+.kanban-card-update {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-bottom: var(--space-4);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Progress */
+.kanban-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.kanban-progress-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.kanban-progress-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+}
+
+.kanban-progress-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    min-width: 24px;
+    text-align: right;
+}
+
+/* Footer */
+.kanban-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: var(--space-3);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.kanban-avatars {
+    display: flex;
+}
+
+.kanban-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--aurora-purple);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg-dark);
+    /* cut out effect */
+}
+
+.kanban-date {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .kanban-board {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .kanban-board {
+        grid-template-columns: 1fr;
+    }
+}

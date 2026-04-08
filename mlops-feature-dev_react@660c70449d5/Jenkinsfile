@@ -1,0 +1,123 @@
+pipeline {
+    agent any
+    
+    environment {
+        PROJECT_ID = 'your-gcp-project-id'  // Update this
+        REGION = 'us-central1'
+        IMAGE_NAME = 'mlops-observatory'
+        GCR_IMAGE = "gcr.io/${PROJECT_ID}/${IMAGE_NAME}"
+        SERVICE_ACCOUNT = 'your-service-account@your-project-id.iam.gserviceaccount.com'  // Update this
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh """
+                        docker build -t ${GCR_IMAGE}:${BUILD_NUMBER} \
+                                     -t ${GCR_IMAGE}:latest \
+                                     .
+                    """
+                }
+            }
+        }
+        
+        stage('Push to GCR') {
+            steps {
+                script {
+                    sh """
+                        gcloud auth configure-docker
+                        docker push ${GCR_IMAGE}:${BUILD_NUMBER}
+                        docker push ${GCR_IMAGE}:latest
+                    """
+                }
+            }
+        }
+        
+        stage('Deploy Dashboard to Cloud Run') {
+            steps {
+                script {
+                    sh """
+                        gcloud run deploy mlops-observatory-dashboard \
+                            --image ${GCR_IMAGE}:latest \
+                            --platform managed \
+                            --region ${REGION} \
+                            --allow-unauthenticated \
+                            --port 8080 \
+                            --memory 2Gi \
+                            --cpu 2 \
+                            --set-env-vars RUN_MODE=dashboard \
+                            --service-account ${SERVICE_ACCOUNT} \
+                            --project ${PROJECT_ID}
+                    """
+                }
+            }
+        }
+        
+        stage('Update Health Monitor Job') {
+            steps {
+                script {
+                    // Check if job exists, create if not
+                    sh """
+                        if ! gcloud run jobs describe mlops-health-monitor --region ${REGION} --project ${PROJECT_ID} 2>/dev/null; then
+                            gcloud run jobs create mlops-health-monitor \
+                                --image ${GCR_IMAGE}:latest \
+                                --region ${REGION} \
+                                --memory 2Gi \
+                                --cpu 1 \
+                                --set-env-vars RUN_MODE=monitor,MONITOR_DAYS=7,EMAIL_TYPE=consolidated \
+                                --service-account ${SERVICE_ACCOUNT} \
+                                --max-retries 2 \
+                                --project ${PROJECT_ID}
+                        else
+                            gcloud run jobs update mlops-health-monitor \
+                                --image ${GCR_IMAGE}:latest \
+                                --region ${REGION} \
+                                --project ${PROJECT_ID}
+                        fi
+                    """
+                }
+            }
+        }
+        
+        stage('Setup Scheduler (First Run Only)') {
+            steps {
+                script {
+                    // Only create scheduler if it doesn't exist
+                    sh """
+                        if ! gcloud scheduler jobs describe mlops-monitor-daily --location ${REGION} --project ${PROJECT_ID} 2>/dev/null; then
+                            gcloud scheduler jobs create http mlops-monitor-daily \
+                                --location ${REGION} \
+                                --schedule="0 9 * * *" \
+                                --uri="https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${PROJECT_ID}/jobs/mlops-health-monitor:run" \
+                                --http-method POST \
+                                --oauth-service-account-email ${SERVICE_ACCOUNT} \
+                                --project ${PROJECT_ID}
+                        fi
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo 'Deployment successful!'
+            sh """
+                echo "Dashboard URL: \$(gcloud run services describe mlops-observatory-dashboard --region ${REGION} --format 'value(status.url)' --project ${PROJECT_ID})"
+            """
+        }
+        failure {
+            echo 'Deployment failed!'
+        }
+        always {
+            cleanWs()
+        }
+    }
+}

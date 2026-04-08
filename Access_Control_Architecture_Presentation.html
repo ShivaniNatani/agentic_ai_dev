@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Access Control Architecture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-base: #030712;
+            --bg-surface: rgba(17, 24, 39, 0.6);
+            --bg-panel: rgba(31, 41, 55, 0.4);
+            --border: rgba(99, 102, 241, 0.2);
+            --border-hover: rgba(99, 102, 241, 0.6);
+            --accent: #0ea5e9;
+            --secondary: #6366f1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font: 'Inter', sans-serif;
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font);
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 30%),
+                radial-gradient(circle at 85% 30%, rgba(14, 165, 233, 0.1), transparent 30%);
+            background-attachment: fixed;
+        }
+
+        /* Ambient Glow */
+        .ambient-glow {
+            position: fixed;
+            top: -20vh;
+            right: -10vw;
+            width: 50vw;
+            height: 50vw;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(3,7,18,0) 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            padding-top: 2rem;
+        }
+
+        .badge-premium {
+            background: linear-gradient(90deg, rgba(99,102,241,0.2) 0%, rgba(14,165,233,0.2) 100%);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1.2rem;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #c7d2fe;
+            margin-bottom: 2rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #fff 0%, #cbd5e1 50%, #6366f1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeUp 1s ease-out 0.2s both;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin-bottom: 3rem;
+            animation: fadeUp 1s ease-out 0.4s both;
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: var(--glass-shadow);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.4s;
+            margin-bottom: 3rem;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--border-hover);
+        }
+
+        /* Grid Layouts */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: var(--bg-panel);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--secondary);
+            transform: translateY(-5px);
+        }
+
+        .icon-box {
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(14,165,233,0.2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .feature-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            color: #fff;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Section Typography */
+        section { padding: 6rem 0; }
+        .section-header { text-align: center; margin-bottom: 4rem; }
+        .section-header h2 { font-size: 2.75rem; font-weight: 700; margin-bottom: 1rem; }
+        .section-header p { color: var(--text-muted); font-size: 1.15rem; max-width: 600px; margin: 0 auto; }
+
+        /* Mermaid Wrapper */
+        .diagram-container {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: auto;
+        }
+
+        .diagram-container .mermaid {
+            width: 60%;
+            min-width: 600px; 
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .diagram-container .mermaid svg {
+            width: 100% !important;
+            height: auto !important;
+            max-width: 800px !important;
+            margin: 0 auto;
+        }
+
+        /* Scroll Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Keyframes */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-scroll {
+            position: absolute;
+            bottom: 3rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-15px); }
+            60% { transform: translateY(-7px); }
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 3rem 0;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-glow"></div>
+
+    <div class="container">
+        <!-- HERO SECTION -->
+        <header class="hero">
+            <div class="badge-premium">
+                <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
+                Q1 Major Achievement
+            </div>
+            <h1>Enterprise Access Control <br> Architecture</h1>
+            <p>A unified, robust, and dynamically administered security perimeter managing authentication, RBAC, and granular data access across the platform ecosystem.</p>
+            <button class="btn-scroll" onclick="document.getElementById('overview').scrollIntoView({behavior: 'smooth'})">
+                <i data-lucide="chevron-down" style="width: 32px; height: 32px;"></i>
+            </button>
+        </header>
+
+        <!-- OVERVIEW / METRICS -->
+        <section id="overview" class="reveal">
+            <div class="section-header">
+                <h2>System Capabilities</h2>
+                <p>Replacing legacy hardcoded rules with a dynamic, real-time security matrix.</p>
+            </div>
+            <div class="grid-3">
+                <div class="feature-card">
+                    <div class="icon-box"><i data-lucide="lock"></i></div>
+                    <h3>Strict Zero-Trust</h3>
+                    <p>Total whitelisting enforcement. Identity alone is insufficient without explicit administrative provision linking the user via the `access.json` manifest.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-box"><i data-lucide="sliders"></i></div>
+                    <h3>Dynamic Admin Panel</h3>
+                    <p>Live React dashboard bounding internally to Port 3001. Allows Hot-swapping roles, users, overrides, and catalog objects instantly without system reboots.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-box"><i data-lucide="users"></i></div>
+                    <h3>Multi-tier Auth</h3>
+                    <p>Seamlessly routes standard employees via primary LDAP protocols, whilst simultaneously routing external stakeholders through bespoke credentials.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- DIAGRAM -->
+        <section class="reveal">
+            <div class="section-header">
+                <h2>Architectural Topology</h2>
+                <p>A visualization of the routing layer, authentication interplay, and storage interaction.</p>
+            </div>
+            <div class="glass-card" style="padding: 1.5rem;">
+                <div class="diagram-container">
+                    <div class="mermaid">
+                    flowchart TD
+                        User(["Platform Users<br>& Administrators"])
+
+                        %% Gateway
+                        Nginx["Nginx Edge Gateway<br>:8510"]
+                        
+                        %% Services
+                        subgraph AppLayer ["Application Layer"]
+                            React["React Dashboard<br>Frontend App"]
+                            PythonAPI["Python Flask API<br>:8511"]
+                            NodeAPI["Node Access Server<br>:3001"]
+                            AdminUI["Admin Control Panel<br>:3001"]
+                        end
+                        
+                        %% Storage
+                        Storage[("Access Manifest<br>access.json")]
+
+                        %% Connections
+                        User -->|"Access Application"| Nginx
+                        Nginx -->|"Serves UI & Protected Routes"| React
+                        
+                        React -.->|"1. LDAP Auth Checks"| PythonAPI
+                        PythonAPI -.->|"1a. Fetch Permissions"| NodeAPI
+                        
+                        React -->|"2. Custom Auth (Externals)"| NodeAPI
+                        
+                        User -->|"3. Manage Security Policies"| AdminUI
+                        AdminUI -->|"REST Upserts"| NodeAPI
+                        
+                        NodeAPI <-->|"Reads / Commits State"| Storage
+                        
+                        classDef ui fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff,stroke-dasharray: 5 5
+                        classDef frontend fill:#38bdf8,stroke:#0284c7,stroke-width:2px,color:#fff
+                        classDef backend fill:#6366f1,stroke:#4f46e5,stroke-width:2px,color:#fff
+                        classDef storage fill:#10b981,stroke:#059669,stroke-width:2px,color:#fff
+                        classDef admin fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:#fff
+                        
+                        class React frontend
+                        class AdminUI admin
+                        class PythonAPI,NodeAPI backend
+                        class Storage storage
+                        class Nginx ui
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DEEP DIVE -->
+        <section class="reveal">
+            <div class="section-header">
+                <h2>Core Mechanisms</h2>
+                <p>How the underlying infrastructure governs system boundaries.</p>
+            </div>
+            
+            <div class="glass-card">
+                <h3 style="font-size: 1.75rem; margin-bottom: 1rem; color: #fff; display: flex; align-items: center; gap: 0.75rem;">
+                    <i data-lucide="database" style="color: var(--accent)"></i> The Central Manifest
+                </h3>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">The entire hierarchy is persisted as a raw JSON manifest mounted securely via Docker Volumes. By avoiding standard DB layers for this system, we eliminate query overhead, ensuring zero-latency permission lookups for every API call.</p>
+                
+                <div class="grid-3" style="margin-top: 0;">
+                    <div>
+                        <h4 style="color: #c7d2fe; margin-bottom: 0.5rem;">Role Matrix</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-muted);">Roles act as arrays bounding access across projects, agents, clients, and pages. Removing an item instantly cascades across all users inheriting that role.</p>
+                    </div>
+                    <div>
+                        <h4 style="color: #c7d2fe; margin-bottom: 0.5rem;">Explicit Overrides</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-muted);">Bypasses rigid RBAC constraints by allowing administrators to graft bespoke access limits to a single specific user, solving outlier edge cases perfectly.</p>
+                    </div>
+                    <div>
+                        <h4 style="color: #c7d2fe; margin-bottom: 0.5rem;">Blank Screen Mitigation</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-muted);">The ProtectedRoute wrapper anticipates and catches unauthorized routing loops, replacing infinite crashes with graceful 'Access Denied' overlays.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FUTURE ROADMAP -->
+        <section class="reveal">
+            <div class="section-header">
+                <h2>Strategic Security Roadmap</h2>
+                <p>Forward-thinking investments for the next operating quarter.</p>
+            </div>
+            <div class="grid-3">
+                <div class="feature-card" style="border-left: 4px solid var(--accent)">
+                    <h3>JWT Enhancements</h3>
+                    <p>Transition sessions from static encodings to stateless JSON Web Tokens with automated 60-minute automated expiry, hardening session duration boundaries.</p>
+                </div>
+                <div class="feature-card" style="border-left: 4px solid var(--secondary)">
+                    <h3>Audit Compliance Export</h3>
+                    <p>Expand the current 500-event circular audit buffer with a "CSV Export" capability tailored directly for external auditors and compliance reporting.</p>
+                </div>
+                <div class="feature-card" style="border-left: 4px solid #f59e0b">
+                    <h3>Adaptive MFA Layer</h3>
+                    <p>Introduce secondary validation mechanisms (OTP via Email/SMS) exclusively required for `Admin` designated logins, guaranteeing absolute system safety.</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                <i data-lucide="activity" style="color: var(--accent);"></i>
+                <span style="font-weight: 600; color: #fff;">IKS ML Observatory</span>
+            </div>
+            <p>Confidential & Proprietary Architecture Documentation • 2026</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Reveal Animation on Scroll
+        function reveal() {
+            var reveals = document.querySelectorAll(".reveal");
+            for (var i = 0; i < reveals.length; i++) {
+                var windowHeight = window.innerHeight;
+                var elementTop = reveals[i].getBoundingClientRect().top;
+                var elementVisible = 100;
+                if (elementTop < windowHeight - elementVisible) {
+                    reveals[i].classList.add("active");
+                }
+            }
+        }
+        window.addEventListener("scroll", reveal);
+        setTimeout(reveal, 100); // Trigger on load
+    </script>
+    
+    <!-- Mermaid Init for Diagram -->
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'dark', 
+            themeVariables: { 
+                fontFamily: 'Inter',
+                fontSize: '18px',
+                primaryColor: '#1e293b', 
+                primaryBorderColor: '#6366f1',
+                lineColor: '#94a3b8',
+                secondaryColor: '#0ea5e9',
+                tertiaryColor: '#10b981'
+            }
+        });
+    </script>
+</body>
+</html>

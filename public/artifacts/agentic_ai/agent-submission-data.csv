@@ -1,0 +1,101 @@
+submission_id,category,client,status,submission_count,submitted_at
+SUB-0001,PA Submission Agent,Aster Health,success,3,2024-04-04
+SUB-0002,PA Submission Agent,Blue Ridge Medical,success,10,2024-01-18
+SUB-0003,PA Submission Agent,Cedarline Clinics,failure,5,2024-03-16
+SUB-0004,PA Submission Agent,DeltaPoint Care,success,3,2024-01-12
+SUB-0005,PA Submission Agent,Elm Street Health,success,3,2024-03-12
+SUB-0006,Referral Agent,Harborview Group,success,16,2024-01-29
+SUB-0007,Referral Agent,Juniper Health,success,11,2024-04-13
+SUB-0008,Referral Agent,Keystone Partners,pending,8,2024-03-30
+SUB-0009,Referral Agent,Lakeside Medical,success,11,2024-01-20
+SUB-0010,Referral Agent,Northwind Clinics,success,13,2024-01-14
+SUB-0011,Payer Surveillence,Orchid Pay,success,6,2024-02-15
+SUB-0012,Payer Surveillence,Pioneer Health Plan,failure,11,2024-04-13
+SUB-0013,Payer Surveillence,Quartz Mutual,success,17,2024-03-09
+SUB-0014,Payer Surveillence,Rivergate Payer,success,15,2024-01-11
+SUB-0015,Payer Surveillence,Summit Shield,success,14,2024-03-14
+SUB-0016,Writeback Agents,Topaz Health,success,5,2024-01-06
+SUB-0017,Writeback Agents,UnionCare,success,12,2024-01-11
+SUB-0018,Writeback Agents,Vista Point,pending,6,2024-02-18
+SUB-0019,Writeback Agents,Willow Creek,success,14,2024-01-21
+SUB-0020,Writeback Agents,Zenith Health,success,9,2024-03-26
+SUB-0021,Payer Surveillence,Orchid Pay,success,6,2024-05-16
+SUB-0022,Referral Agent,Juniper Health,success,9,2024-05-22
+SUB-0023,Referral Agent,Keystone Partners,failure,25,2024-01-15
+SUB-0024,Referral Agent,Harborview Group,failure,13,2024-03-09
+SUB-0025,PA Submission Agent,Blue Ridge Medical,pending,19,2024-03-21
+SUB-0026,Referral Agent,Lakeside Medical,success,30,2024-04-27
+SUB-0027,Referral Agent,Keystone Partners,success,24,2024-05-23
+SUB-0028,Payer Surveillence,Summit Shield,success,19,2024-04-12
+SUB-0029,Payer Surveillence,Pioneer Health Plan,pending,5,2024-05-10
+SUB-0030,Writeback Agents,Topaz Health,failure,28,2024-01-29
+SUB-0031,Referral Agent,Juniper Health,failure,14,2024-06-01
+SUB-0032,PA Submission Agent,DeltaPoint Care,success,15,2024-05-15
+SUB-0033,Payer Surveillence,Summit Shield,pending,1,2024-01-30
+SUB-0034,Payer Surveillence,Quartz Mutual,success,14,2024-02-10
+SUB-0035,Writeback Agents,Topaz Health,pending,29,2024-03-08
+SUB-0036,Referral Agent,Northwind Clinics,pending,28,2024-06-09
+SUB-0037,Payer Surveillence,Summit Shield,success,5,2024-04-05
+SUB-0038,Referral Agent,Northwind Clinics,pending,30,2024-05-15
+SUB-0039,PA Submission Agent,Elm Street Health,success,1,2024-01-29
+SUB-0040,Payer Surveillence,Quartz Mutual,success,8,2024-05-25
+SUB-0041,PA Submission Agent,Aster Health,failure,27,2024-01-18
+SUB-0042,Referral Agent,Juniper Health,success,18,2024-02-12
+SUB-0043,Payer Surveillence,Summit Shield,pending,14,2024-02-24
+SUB-0044,Referral Agent,Keystone Partners,success,22,2024-04-05
+SUB-0045,Writeback Agents,Zenith Health,success,8,2024-02-27
+SUB-0046,PA Submission Agent,Cedarline Clinics,success,18,2024-02-28
+SUB-0047,Referral Agent,Harborview Group,success,21,2024-01-16
+SUB-0048,Referral Agent,Harborview Group,pending,28,2024-03-25
+SUB-0049,PA Submission Agent,Elm Street Health,success,22,2024-05-04
+SUB-0050,Referral Agent,Northwind Clinics,success,30,2024-05-26
+SUB-0051,Writeback Agents,UnionCare,failure,26,2024-04-14
+SUB-0052,Referral Agent,Harborview Group,success,14,2024-03-31
+SUB-0053,Writeback Agents,Willow Creek,success,24,2024-01-14
+SUB-0054,PA Submission Agent,Aster Health,success,11,2024-01-28
+SUB-0055,Referral Agent,Juniper Health,success,15,2024-02-05
+SUB-0056,Writeback Agents,UnionCare,success,8,2024-01-20
+SUB-0057,Writeback Agents,Zenith Health,success,21,2024-05-18
+SUB-0058,PA Submission Agent,Aster Health,pending,28,2024-03-01
+SUB-0059,Referral Agent,Lakeside Medical,success,7,2024-04-12
+SUB-0060,PA Submission Agent,Blue Ridge Medical,success,13,2024-03-08
+SUB-0061,Writeback Agents,Vista Point,success,24,2024-05-22
+SUB-0062,Writeback Agents,UnionCare,success,7,2024-01-15
+SUB-0063,PA Submission Agent,Cedarline Clinics,success,19,2024-05-02
+SUB-0064,Referral Agent,Harborview Group,pending,3,2024-02-17
+SUB-0065,PA Submission Agent,Elm Street Health,success,28,2024-03-01
+SUB-0066,Writeback Agents,Topaz Health,pending,19,2024-03-04
+SUB-0067,PA Submission Agent,Elm Street Health,success,22,2024-05-29
+SUB-0068,Payer Surveillence,Quartz Mutual,success,23,2024-03-21
+SUB-0069,Referral Agent,Keystone Partners,success,22,2024-03-17
+SUB-0070,Writeback Agents,Vista Point,pending,30,2024-01-19
+SUB-0071,PA Submission Agent,DeltaPoint Care,success,19,2024-01-26
+SUB-0072,PA Submission Agent,Elm Street Health,success,9,2024-02-03
+SUB-0073,Payer Surveillence,Orchid Pay,pending,12,2024-03-13
+SUB-0074,Referral Agent,Lakeside Medical,failure,23,2024-03-18
+SUB-0075,PA Submission Agent,Elm Street Health,success,22,2024-01-27
+SUB-0076,Referral Agent,Keystone Partners,success,4,2024-05-21
+SUB-0077,Referral Agent,Keystone Partners,success,7,2024-03-28
+SUB-0078,Referral Agent,Keystone Partners,success,9,2024-01-14
+SUB-0079,PA Submission Agent,DeltaPoint Care,failure,2,2024-01-01
+SUB-0080,Payer Surveillence,Pioneer Health Plan,success,9,2024-02-11
+SUB-0081,Writeback Agents,Zenith Health,success,18,2024-01-03
+SUB-0082,PA Submission Agent,Aster Health,pending,23,2024-02-08
+SUB-0083,PA Submission Agent,Cedarline Clinics,success,5,2024-04-20
+SUB-0084,Referral Agent,Harborview Group,success,29,2024-01-11
+SUB-0085,Payer Surveillence,Pioneer Health Plan,success,22,2024-01-27
+SUB-0086,Payer Surveillence,Summit Shield,pending,14,2024-06-07
+SUB-0087,Referral Agent,Juniper Health,pending,26,2024-02-15
+SUB-0088,Writeback Agents,Topaz Health,success,30,2024-03-26
+SUB-0089,Writeback Agents,UnionCare,success,26,2024-01-28
+SUB-0090,Writeback Agents,Topaz Health,pending,8,2024-02-21
+SUB-0091,Writeback Agents,Vista Point,success,26,2024-02-28
+SUB-0092,Referral Agent,Harborview Group,success,13,2024-03-25
+SUB-0093,Payer Surveillence,Orchid Pay,pending,9,2024-03-30
+SUB-0094,Writeback Agents,Zenith Health,success,1,2024-01-30
+SUB-0095,Payer Surveillence,Pioneer Health Plan,success,9,2024-01-10
+SUB-0096,PA Submission Agent,Elm Street Health,success,24,2024-03-21
+SUB-0097,Writeback Agents,Zenith Health,pending,4,2024-04-08
+SUB-0098,Referral Agent,Keystone Partners,success,14,2024-01-01
+SUB-0099,Referral Agent,Keystone Partners,success,22,2024-03-25
+SUB-0100,Payer Surveillence,Orchid Pay,success,10,2024-05-09

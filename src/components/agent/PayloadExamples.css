@@ -1,0 +1,122 @@
+.payload-examples__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.payload-examples__section {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.payload-examples__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.payload-examples__heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--off-white);
+}
+
+.payload-examples__icon {
+    font-size: 1.2rem;
+}
+
+.payload-examples__copy {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--light-gray);
+    font-size: 0.85rem;
+    border-radius: 8px;
+    transition: var(--transition-fast);
+}
+
+.payload-examples__copy:hover {
+    background: var(--primary-red);
+    color: var(--pure-white);
+}
+
+.payload-examples__copy--copied {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.payload-examples__code {
+    padding: 20px 24px;
+    background: rgba(0, 0, 0, 0.3);
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.payload-examples__code pre {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+.payload-examples__code code {
+    color: var(--off-white);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Notes */
+.payload-examples__notes {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 24px 30px;
+}
+
+.payload-examples__notes h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--off-white);
+    margin-bottom: 16px;
+}
+
+.payload-examples__notes ul {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.payload-examples__notes li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: var(--light-gray);
+}
+
+.payload-examples__notes li::before {
+    content: '•';
+    color: var(--primary-red);
+}
+
+.payload-examples__notes code {
+    padding: 2px 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: var(--primary-red);
+}
+
+@media (max-width: 968px) {
+    .payload-examples__grid {
+        grid-template-columns: 1fr;
+    }
+}

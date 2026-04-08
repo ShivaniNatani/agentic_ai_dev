@@ -1,0 +1,129 @@
+/* ============================================================
+   GLOBAL MAP WIDGET (AURORA THEME)
+   ============================================================ */
+.global-map-container {
+    perspective: 1000px;
+    height: 400px;
+    background: var(--aurora-cosmos);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.holographic-plate {
+    width: 90%;
+    height: 90%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out;
+}
+
+.world-map-svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 10px rgba(0, 245, 212, 0.3));
+    opacity: 0.8;
+}
+
+.map-land {
+    fill: rgba(255, 255, 255, 0.05);
+    stroke: var(--aurora-cyan);
+    stroke-width: 0.5;
+    transition: all 0.3s;
+}
+
+.map-land:hover {
+    fill: rgba(0, 245, 212, 0.1);
+}
+
+/* Data Beacons */
+.map-beacon {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--aurora-cyan);
+    /* Default */
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 15px var(--aurora-cyan);
+    cursor: pointer;
+}
+
+.map-beacon::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300%;
+    height: 300%;
+    border-radius: 50%;
+    border: 1px solid var(--aurora-cyan);
+    animation: beaconPulse 2s infinite;
+}
+
+/* Beacon Colors */
+.beacon-us-east {
+    background: var(--aurora-purple);
+    box-shadow: 0 0 15px var(--aurora-purple);
+}
+
+.beacon-us-east::before {
+    border-color: var(--aurora-purple);
+}
+
+.beacon-eu-west {
+    background: var(--status-success);
+    box-shadow: 0 0 15px var(--status-success);
+}
+
+.beacon-eu-west::before {
+    border-color: var(--status-success);
+}
+
+@keyframes beaconPulse {
+    0% {
+        width: 100%;
+        height: 100%;
+        opacity: 1;
+    }
+
+    100% {
+        width: 400%;
+        height: 400%;
+        opacity: 0;
+    }
+}
+
+/* Tooltip */
+.map-tooltip {
+    position: absolute;
+    background: var(--glass-bg-medium);
+    border: 1px solid var(--glass-border);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    color: var(--text-primary);
+    pointer-events: none;
+    transform: translate(-50%, -120%);
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 10;
+}
+
+.map-beacon:hover .map-tooltip {
+    opacity: 1;
+}
+
+.region-label {
+    font-weight: 700;
+    color: var(--aurora-cyan);
+    display: block;
+    margin-bottom: 2px;
+}

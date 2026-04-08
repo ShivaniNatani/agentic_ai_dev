@@ -1,0 +1,192 @@
+.projects__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.projects__title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--off-white);
+}
+
+.projects__count {
+    padding: 6px 14px;
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 20px;
+}
+
+.projects__list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.projects__item {
+    padding: 28px;
+}
+
+.projects__item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.projects__item-status-wrapper {
+    display: flex;
+    gap: 10px;
+}
+
+.projects__item-status {
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-radius: 12px;
+}
+
+.projects__item-status--active {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.projects__item-status--review {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.projects__item-status--completed {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.projects__item-priority {
+    font-size: 0.85rem;
+}
+
+.projects__item-date {
+    font-size: 0.85rem;
+    color: var(--light-gray);
+}
+
+.projects__item-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--off-white);
+    margin-bottom: 8px;
+}
+
+.projects__item-description {
+    font-size: 0.95rem;
+    color: var(--light-gray);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+/* Progress Bar */
+.projects__progress {
+    margin-bottom: 20px;
+}
+
+.projects__progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--light-gray);
+    margin-bottom: 8px;
+}
+
+.projects__progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.projects__progress-fill {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+/* Updates */
+.projects__updates {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+
+.projects__updates h5 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--off-white);
+    margin-bottom: 12px;
+}
+
+.projects__updates ul {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.projects__updates li {
+    display: flex;
+    gap: 12px;
+    font-size: 0.85rem;
+}
+
+.projects__update-date {
+    color: var(--primary-red);
+    min-width: 50px;
+    font-weight: 500;
+}
+
+.projects__update-text {
+    color: var(--light-gray);
+}
+
+/* Team */
+.projects__team {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.projects__team-label {
+    font-size: 0.85rem;
+    color: var(--light-gray);
+}
+
+.projects__team-members {
+    display: flex;
+    gap: 6px;
+}
+
+.projects__team-member {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary);
+    color: var(--pure-white);
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 50%;
+    cursor: default;
+}
+
+@media (max-width: 768px) {
+    .projects__item-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}

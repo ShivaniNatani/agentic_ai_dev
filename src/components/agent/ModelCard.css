@@ -1,0 +1,134 @@
+.model-card__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.model-card__section {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 30px;
+}
+
+.model-card__overview {
+    grid-column: span 2;
+}
+
+.model-card__heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--off-white);
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.model-card__heading-icon {
+    font-size: 1.3rem;
+}
+
+.model-card__info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
+
+.model-card__info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.model-card__label {
+    font-size: 0.85rem;
+    color: var(--light-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.model-card__value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--off-white);
+}
+
+.model-card__value--highlight {
+    color: var(--primary-red);
+}
+
+.model-card__list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.model-card__list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 0.95rem;
+    color: var(--off-white);
+    line-height: 1.5;
+}
+
+.model-card__bullet {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.model-card__list-item--success .model-card__bullet {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.model-card__list-item--warning .model-card__bullet {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.model-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.model-card__tag {
+    padding: 8px 16px;
+    background: rgba(206, 17, 38, 0.1);
+    border: 1px solid rgba(206, 17, 38, 0.2);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: var(--off-white);
+}
+
+@media (max-width: 968px) {
+    .model-card__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .model-card__overview {
+        grid-column: span 1;
+    }
+
+    .model-card__info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .model-card__info-grid {
+        grid-template-columns: 1fr;
+    }
+}

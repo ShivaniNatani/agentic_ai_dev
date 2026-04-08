@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  iks-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iks-dashboard
+    ports:
+      - "8510:8510"
+      - "3001:3001"
+    volumes:
+      # Persist access.json so admin changes survive container restarts
+      - ./access-data/access.json:/app/access-server/access.json
+    environment:
+      - PORT=8510
+      - RUN_MODE=dashboard
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/secrets/agentic-ai-key.json
+      - PUBLIC_OUTAGE_MODE=false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8510/api/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3

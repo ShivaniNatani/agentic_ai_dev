@@ -1,0 +1,257 @@
+/* ============================================================
+   IKS HEALTHCARE - DESIGN TOKENS (AURORA THEME)
+   ============================================================ */
+
+:root {
+    /* Colors - Brand */
+    --aurora-cyan: #00f5d4;
+    --aurora-cyan-rgb: 0, 245, 212;
+    --aurora-purple: #a855f7;
+    --aurora-purple-rgb: 168, 85, 247;
+    --aurora-magenta: #f0abfc;
+    --aurora-blue: #3b82f6;
+
+    /* Colors - Backgrounds & Surfaces */
+    --aurora-night: #020617;
+    /* Deepest black/blue */
+    --aurora-cosmos: #0f172a;
+    /* Card bg */
+    --aurora-void: #000000;
+
+    /* Gradients */
+    --gradient-aurora: linear-gradient(135deg, var(--aurora-cyan) 0%, var(--aurora-purple) 100%);
+    --gradient-primary: linear-gradient(to right, #00f5d4, #a855f7);
+    --gradient-tertiary: linear-gradient(135deg, #f472b6, #a855f7);
+
+    /* Text */
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --text-muted: #475569;
+    --text-on-primary: #0f172a;
+
+    /* Glass Effect Variables */
+    --glass-bg: rgba(15, 23, 42, 0.6);
+    --glass-bg-light: rgba(30, 41, 59, 0.5);
+    --glass-bg-medium: rgba(30, 41, 59, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-active: rgba(255, 255, 255, 0.2);
+    --glass-blur-sm: 4px;
+    --glass-blur-md: 8px;
+    --glass-blur-lg: 12px;
+    --glass-blur-xl: 16px;
+
+    /* Status Colors */
+    --status-success: #4ade80;
+    --status-warning: #facc15;
+    --status-error: #f87171;
+    --status-error-soft: rgba(248, 113, 113, 0.15);
+    --status-info: #60a5fa;
+
+    /* Spacing & Layout */
+    --navbar-height: 70px;
+    --container-xl: 1280px;
+    --container-2xl: 1536px;
+
+    /* Radii */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    --radius-full: 9999px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    --aurora-cyan-glow: 0 0 20px rgba(0, 245, 212, 0.3);
+
+    /* Typography */
+    --font-display: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+    --text-4xl: 2.25rem;
+
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    --font-extrabold: 800;
+
+    --tracking-wider: 0.05em;
+
+    /* Z-Index */
+    --z-negative: -1;
+    --z-0: 0;
+    --z-10: 10;
+    --z-dropdown: 50;
+    --z-sticky: 100;
+    --z-overlay: 999;
+
+    /* Transitions */
+    --transition-fast: 150ms ease;
+    --transition-normal: 300ms ease;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --duration-fast: 0.2s;
+
+    /* Spacing Scale */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-12: 3rem;
+    --space-20: 5rem;
+}
+
+/* Reset / Base */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--aurora-night);
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Utilities */
+.text-success {
+    color: var(--status-success);
+}
+
+.text-warning {
+    color: var(--status-warning);
+}
+
+.text-error {
+    color: var(--status-error);
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+.animate-fade-in-up {
+    /* Safe visibility pattern: use 'both' to handle 'from' state, 
+       but keep element effectively visible if animation fails (opacity defaults to 1) 
+       Wait, if we remove opacity: 0, and use 'both', it WILL instant-hide at 0% if delay matches. 
+       This is the standard correct way. */
+    animation: fadeInUp 0.6s var(--ease-out) both;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* --- LIGHT THEME (Aurora Daybreak) --- */
+/* --- LIGHT THEME (Cloudy Blue) --- */
+[data-theme="light"] {
+    /* Backgrounds: Crisp White & Soft Blue Grays */
+    --aurora-night: #F0F4F8;
+    /* Main page background (Cloudy Blue) */
+    --aurora-cosmos: #FFFFFF;
+    /* Card background (Pure White) */
+    --aurora-void: #E2E8F0;
+    /* Borders/Separators */
+
+    /* Text: High Contrast Navy/Slate */
+    --text-primary: #0F172A;
+    /* Navy 900 */
+    --text-secondary: #334155;
+    /* Slate 700 */
+    --text-tertiary: #475569;
+    /* Slate 600 */
+    --text-muted: #64748B;
+    /* Slate 500 */
+    --text-on-primary: #FFFFFF;
+
+    /* Glass: Clear & crisp */
+    --glass-bg: rgba(255, 255, 255, 0.95);
+    --glass-bg-light: rgba(255, 255, 255, 0.7);
+    --glass-bg-medium: #FFFFFF;
+    --glass-border: rgba(148, 163, 184, 0.3);
+    /* Visible border */
+    --glass-border-active: rgba(59, 130, 246, 0.5);
+    /* Blue highlight */
+
+    /* Gradients: Fresh Daybreak */
+    --gradient-aurora: linear-gradient(135deg, #0EA5E9 0%, #6366F1 100%);
+    --gradient-primary: linear-gradient(to right, #0EA5E9, #3B82F6);
+    --gradient-page: linear-gradient(to bottom, #F0F4F8, #E0F2FE);
+    --gradient-card: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+
+    /* Shadows: Crisp & Elevated */
+    --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+    --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.08);
+    --aurora-cyan-glow: 0 0 15px rgba(14, 165, 233, 0.3);
+}
+
+[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+[data-theme="light"] {
+    color-scheme: light;
+}

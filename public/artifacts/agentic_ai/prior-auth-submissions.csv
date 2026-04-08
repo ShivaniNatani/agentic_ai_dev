@@ -1,0 +1,73 @@
+category,subcategory,client,submitted_at,status,submission_count
+Referral Agent,Prior Auth,UHC,2025-01-15,success,109
+Referral Agent,Prior Auth,UHC,2025-01-15,failure,10
+Referral Agent,Prior Auth,UHC,2025-01-15,pending,4
+Referral Agent,Prior Auth,Cigna,2025-01-15,success,2
+Referral Agent,Prior Auth,Cigna,2025-01-15,failure,0
+Referral Agent,Prior Auth,Cigna,2025-01-15,pending,0
+Referral Agent,Prior Auth,Availity,2025-01-15,success,19
+Referral Agent,Prior Auth,Availity,2025-01-15,failure,5
+Referral Agent,Prior Auth,Availity,2025-01-15,pending,6
+Referral Agent,Prior Auth,UHC,2025-02-15,success,82
+Referral Agent,Prior Auth,UHC,2025-02-15,failure,7
+Referral Agent,Prior Auth,UHC,2025-02-15,pending,3
+Referral Agent,Prior Auth,Cigna,2025-02-15,success,1
+Referral Agent,Prior Auth,Cigna,2025-02-15,failure,0
+Referral Agent,Prior Auth,Cigna,2025-02-15,pending,0
+Referral Agent,Prior Auth,Availity,2025-02-15,success,15
+Referral Agent,Prior Auth,Availity,2025-02-15,failure,3
+Referral Agent,Prior Auth,Availity,2025-02-15,pending,5
+Referral Agent,Prior Auth,UHC,2025-03-15,success,103
+Referral Agent,Prior Auth,UHC,2025-03-15,failure,8
+Referral Agent,Prior Auth,UHC,2025-03-15,pending,4
+Referral Agent,Prior Auth,Cigna,2025-03-15,success,1
+Referral Agent,Prior Auth,Cigna,2025-03-15,failure,0
+Referral Agent,Prior Auth,Cigna,2025-03-15,pending,0
+Referral Agent,Prior Auth,Availity,2025-03-15,success,18
+Referral Agent,Prior Auth,Availity,2025-03-15,failure,3
+Referral Agent,Prior Auth,Availity,2025-03-15,pending,5
+Referral Agent,Prior Auth,UHC,2025-04-15,success,72
+Referral Agent,Prior Auth,UHC,2025-04-15,failure,5
+Referral Agent,Prior Auth,UHC,2025-04-15,pending,3
+Referral Agent,Prior Auth,Cigna,2025-04-15,success,1
+Referral Agent,Prior Auth,Cigna,2025-04-15,failure,0
+Referral Agent,Prior Auth,Cigna,2025-04-15,pending,0
+Referral Agent,Prior Auth,Availity,2025-04-15,success,13
+Referral Agent,Prior Auth,Availity,2025-04-15,failure,3
+Referral Agent,Prior Auth,Availity,2025-04-15,pending,5
+Referral Agent,Prior Auth,UHC,2025-05-15,success,86
+Referral Agent,Prior Auth,UHC,2025-05-15,failure,5
+Referral Agent,Prior Auth,UHC,2025-05-15,pending,3
+Referral Agent,Prior Auth,Cigna,2025-05-15,success,1
+Referral Agent,Prior Auth,Cigna,2025-05-15,failure,0
+Referral Agent,Prior Auth,Cigna,2025-05-15,pending,0
+Referral Agent,Prior Auth,Availity,2025-05-15,success,15
+Referral Agent,Prior Auth,Availity,2025-05-15,failure,3
+Referral Agent,Prior Auth,Availity,2025-05-15,pending,6
+Referral Agent,Prior Auth,UHC,2025-06-15,success,48
+Referral Agent,Prior Auth,UHC,2025-06-15,failure,5
+Referral Agent,Prior Auth,UHC,2025-06-15,pending,3
+Referral Agent,Prior Auth,Cigna,2025-06-15,success,1
+Referral Agent,Prior Auth,Cigna,2025-06-15,failure,0
+Referral Agent,Prior Auth,Cigna,2025-06-15,pending,0
+Referral Agent,Prior Auth,Availity,2025-06-15,success,9
+Referral Agent,Prior Auth,Availity,2025-06-15,failure,3
+Referral Agent,Prior Auth,Availity,2025-06-15,pending,5
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-01-15,success,320
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-01-15,failure,80
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-01-15,pending,0
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-02-15,success,340
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-02-15,failure,85
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-02-15,pending,0
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-03-15,success,360
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-03-15,failure,90
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-03-15,pending,0
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-04-15,success,335
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-04-15,failure,86
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-04-15,pending,0
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-05-15,success,330
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-05-15,failure,90
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-05-15,pending,0
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-06-15,success,337
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-06-15,failure,86
+Writeback Agents,OrthoNY Pharmacy,OrthoNY Pharmacy,2025-06-15,pending,0

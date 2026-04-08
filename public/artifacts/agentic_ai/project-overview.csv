@@ -1,0 +1,8 @@
+project,stage,version,update,last_updated,owner,status,asset
+Optimix Next Best Action,Live,2.0,Optimix NBA screenshots attached.,2026-09-01,Agentic AI,Stable,/artifacts/agentic_ai/snaps_pdf/NBA_Screen_shots.pdf
+Agentic Submission Dashboard,Live,1.6.2,Added CSV ingestion for agent metrics,2025-01-08,Agentic AI,Stable,
+MLOps Observability Hub,Live,2.3.0,New drift alerts and latency SLOs,2025-01-06,MLOps,Stable,
+Referral Automation,Live,1.2.1,Expanded payer routing rules,2025-01-05,Referral,Stable,
+Provider Network Expansion,Ongoing,0.9.0,Onboarding specialists for West region,2025-01-07,Referral,In Progress,
+Writeback-ONY CDPHP,Ongoing,0.8.4,Wissen Integration with PA Submissions,2025-01-06,Writeback,In Progress,
+FHIR R4 Compliance,Ongoing,0.7.9,,2025-01-04,Prior Auth,In Review,

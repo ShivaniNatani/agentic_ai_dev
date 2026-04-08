@@ -1,0 +1,190 @@
+/* ============================================================
+   IKS HEALTHCARE - SANDBOX EMBED
+   Premium Iframe Demonstration Environment
+   ============================================================ */
+
+.sandbox-embed {
+    display: flex;
+    flex-direction: column;
+    background: var(--aurora-void);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    height: 600px;
+    box-shadow: var(--shadow-xl);
+    transition: all var(--transition-normal);
+}
+
+.sandbox-embed--fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+}
+
+/* Header */
+.RO-sandbox-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-4);
+    background: var(--aurora-night);
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.sandbox-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.sandbox-status-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--status-success);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--status-success-soft);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.sandbox-title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+}
+
+.sandbox-client-badge {
+    padding: 2px 8px;
+    background: var(--glass-bg-light);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.sandbox-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.sandbox-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.sandbox-action-btn:hover {
+    background: var(--glass-bg-light);
+    color: var(--text-primary);
+    border-color: var(--glass-border);
+}
+
+/* Viewport */
+.sandbox-viewport {
+    flex: 1;
+    position: relative;
+    background: #1e1e1e;
+    /* VS Code iframe bg feel */
+}
+
+.sandbox-loader {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    background: var(--aurora-void);
+    z-index: 10;
+}
+
+.sandbox-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--glass-border);
+    border-top-color: var(--aurora-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.sandbox-loader p {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.sandbox-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #fff;
+    /* Default white background for demo content */
+}
+
+/* Overlay gradient for depth */
+.sandbox-overlay-gradient {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.4) 150%);
+    pointer-events: none;
+}
+
+/* Footer */
+.sandbox-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-4);
+    background: var(--aurora-night);
+    border-top: 1px solid var(--glass-border);
+}
+
+.sandbox-stats {
+    display: flex;
+    gap: var(--space-4);
+}
+
+.sandbox-stat {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+}
+
+.sandbox-stat-label {
+    color: var(--text-muted);
+}
+
+.sandbox-stat-value {
+    color: var(--aurora-primary);
+    font-family: var(--font-mono);
+}
+
+.sandbox-console-trigger {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.sandbox-console-trigger:hover {
+    background: var(--glass-bg-light);
+    color: var(--text-primary);
+}

@@ -1,0 +1,945 @@
+{
+  "blacklist": [],
+  "users": {
+    "admin@ikshealth.com": {
+      "role": "mlops",
+      "password": "admin"
+    },
+    "shivani.natani@ikshealth.com": {
+      "role": "admin",
+      "password": "Flyoverocean@143$"
+    },
+    "bhavin@ikshealth.com": {
+      "role": "mlops"
+    },
+    "demo@ikshealth.com": {
+      "role": "data science",
+      "password": "demo"
+    },
+    "gaurab.anand@ikshealth.com": {
+      "role": "data science"
+    }
+  },
+  "roles": {
+    "admin": {
+      "projects": [
+        "agentic",
+        "mlops",
+        "optimix"
+      ],
+      "agents": [
+        "all"
+      ],
+      "clients": [
+        "all"
+      ],
+      "pages": [
+        "dashboard",
+        "project-overview",
+        "agents",
+        "sandbox",
+        "release-notes",
+        "stakeholder-releases",
+        "clients",
+        "contact",
+        "about",
+        "setup",
+        "broadcast"
+      ]
+    },
+    "mlops": {
+      "projects": [
+        "mlops"
+      ],
+      "agents": [],
+      "clients": [],
+      "pages": [
+        "dashboard",
+        "project-overview",
+        "release-notes",
+        "about",
+        "contact"
+      ]
+    },
+    "agentic": {
+      "projects": [
+        "agentic"
+      ],
+      "agents": [
+        "pkb",
+        "writeback",
+        "browser-agent-pa"
+      ],
+      "clients": [
+        "all"
+      ],
+      "pages": [
+        "dashboard",
+        "agents",
+        "sandbox",
+        "release-notes",
+        "about",
+        "contact"
+      ]
+    },
+    "developer": {
+      "projects": [
+        "mlops",
+        "agentic"
+      ],
+      "agents": [
+        "all"
+      ],
+      "clients": [
+        "all"
+      ],
+      "pages": [
+        "dashboard",
+        "agents",
+        "sandbox",
+        "release-notes",
+        "about",
+        "contact"
+      ]
+    },
+    "user": {
+      "projects": [],
+      "agents": [],
+      "clients": [],
+      "pages": [
+        "dashboard",
+        "about"
+      ]
+    },
+    "data science": {
+      "projects": [
+        "mlops",
+        "optimix"
+      ],
+      "agents": [],
+      "clients": [],
+      "pages": [
+        "dashboard",
+        "about"
+      ]
+    }
+  },
+  "catalog": {
+    "projects": {
+      "agentic": {
+        "label": "Agentic AI",
+        "agents": {
+          "pkb": {
+            "label": "PKB Agent",
+            "clients": [
+              "UnitedHealthcare",
+              "Aetna",
+              "Cigna"
+            ],
+            "subProjects": [
+              {
+                "id": "PKB-1",
+                "name": "Payer Policy Surveillance V-1"
+              },
+              {
+                "id": "PKB-2",
+                "name": "Payer Policy Surveillance V-2 + 3"
+              },
+              {
+                "id": "NBA-1",
+                "name": "Next Best Action Recommendation"
+              },
+              {
+                "id": "MNA-1",
+                "name": "Medical Necessity Agent (Policy Extraction)"
+              },
+              {
+                "id": "EVE-1",
+                "name": "ASK EVE"
+              }
+            ]
+          },
+          "writeback": {
+            "label": "Writeback Agent",
+            "clients": [
+              "CDPHP",
+              "OrthoNY",
+              "AHN",
+              "PDP",
+              "PHMG",
+              "Revere",
+              "PEH"
+            ],
+            "subProjects": [
+              {
+                "id": "CDP-ALL",
+                "name": "CDPHP - ONY Writeback"
+              },
+              {
+                "id": "ORT-ALL",
+                "name": "OrthoNY ModMed Writeback"
+              },
+              {
+                "id": "AHN-1",
+                "name": "AHN WriteBack"
+              },
+              {
+                "id": "PDP-1",
+                "name": "PDP Writeback (NextGen v6)"
+              },
+              {
+                "id": "PHM-ALL",
+                "name": "PHMG Writeback"
+              },
+              {
+                "id": "REV-1",
+                "name": "Revere Writeback"
+              },
+              {
+                "id": "PEH-1",
+                "name": "EHR PEH Writeback (Integration Layer)"
+              }
+            ]
+          },
+          "browser-agent-pa": {
+            "label": "Browser Agent PA",
+            "clients": [
+              "BCBS",
+              "BCBS AZ",
+              "Premera",
+              "Regence",
+              "Well Care",
+              "Well Point",
+              "UHC",
+              "Carelon",
+              "Evolent",
+              "OrthoNY",
+              "Fidelis",
+              "Availity",
+              "Cigna",
+              "One Heart",
+              "Revere"
+            ],
+            "subProjects": [
+              {
+                "id": "PA-1",
+                "name": "BCBS IL PA Submission"
+              },
+              {
+                "id": "PA-2",
+                "name": "CMM / GIA Availity PA (BCBS of AZ)"
+              },
+              {
+                "id": "PA-3",
+                "name": "Premera / GIA Availity PA Alaska"
+              },
+              {
+                "id": "PA-4",
+                "name": "Regence Utah / GIA Availity PA"
+              },
+              {
+                "id": "PA-5",
+                "name": "Regence Idaho / GIA Availity PA"
+              },
+              {
+                "id": "PA-6",
+                "name": "Well Care / GIA Availity PA"
+              },
+              {
+                "id": "PA-7",
+                "name": "Well Point / GIA Availity PA"
+              },
+              {
+                "id": "PA-8",
+                "name": "CMM UHC PA"
+              },
+              {
+                "id": "PA-9",
+                "name": "CMM Carelon PA (Radiology/Internal Med)"
+              },
+              {
+                "id": "PA-10",
+                "name": "CMM Evolent PA"
+              },
+              {
+                "id": "PA-11",
+                "name": "GIA Carelon PA"
+              },
+              {
+                "id": "PA-12",
+                "name": "Evolent-OrthoNY"
+              },
+              {
+                "id": "PA-13",
+                "name": "RADMD/Fidelis (Status Check)"
+              },
+              {
+                "id": "PA-14",
+                "name": "Code Tagging"
+              },
+              {
+                "id": "REF-1",
+                "name": "Availity Referral Determination"
+              },
+              {
+                "id": "REF-2",
+                "name": "UHC Referral Determination"
+              },
+              {
+                "id": "REF-3",
+                "name": "Cigna Referral Determination"
+              },
+              {
+                "id": "REF-4",
+                "name": "One Heart Referral Agent"
+              },
+              {
+                "id": "REF-5",
+                "name": "Revere - SelectHealth PA"
+              }
+            ]
+          }
+        }
+      },
+      "mlops": {
+        "label": "MLOps",
+        "agents": {},
+        "clients": [
+          "OrthoNY",
+          "CDPHP",
+          "Palomar Health",
+          "Optum Care"
+        ]
+      },
+      "optimix": {
+        "label": "Optimix",
+        "agents": {},
+        "clients": [
+          "GIA"
+        ]
+      }
+    },
+    "pages": [
+      "dashboard",
+      "project-overview",
+      "agents",
+      "sandbox",
+      "release-notes",
+      "stakeholder-releases",
+      "clients",
+      "contact",
+      "about",
+      "setup",
+      "broadcast"
+    ]
+  },
+  "custom_user_overrides": {
+    "demo@ikshealth.com": {
+      "projects": [],
+      "agents": [
+        "all"
+      ],
+      "clients": [
+        "all"
+      ],
+      "pages": [
+        "about"
+      ]
+    },
+    "bhavin@ikshealth.com": {
+      "projects": [
+        "mlops"
+      ],
+      "agents": [],
+      "clients": [],
+      "pages": []
+    }
+  },
+  "audit_logs": [
+    {
+      "timestamp": "2026-04-03T10:07:59.408Z",
+      "adminEmail": "shivani.natani@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User shivani.natani@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-04-02T12:40:52.809Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-04-02T11:34:42.035Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-04-02T11:33:02.638Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-04-02T11:29:55.560Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-04-02T11:28:14.264Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-04-02T11:26:36.359Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-04-02T11:20:50.680Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-04-02T11:19:52.586Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-04-02T11:18:35.676Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-04-02T11:17:38.787Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-04-02T11:15:58.364Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-04-02T11:14:59.185Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "UPDATE_USER",
+      "details": "Set admin@ikshealth.com to role mlops"
+    },
+    {
+      "timestamp": "2026-04-02T11:12:13.129Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T14:24:42.762Z",
+      "adminEmail": "shivani.natani@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User shivani.natani@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T14:16:51.075Z",
+      "adminEmail": "demo@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User demo@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T14:02:56.463Z",
+      "adminEmail": "shivani.natani@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User shivani.natani@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T14:02:51.688Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "UPDATE_USER",
+      "details": "Set shivani.natani@ikshealth.com to role admin (Password explicitly set)"
+    },
+    {
+      "timestamp": "2026-03-27T13:59:38.985Z",
+      "adminEmail": "demo@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User demo@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T13:55:05.281Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T13:52:32.240Z",
+      "adminEmail": "demo@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User demo@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T13:18:16.193Z",
+      "adminEmail": "demo@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User demo@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T13:00:40.370Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "DELETE_USER",
+      "details": "Revoked all access for argha.mukherjee@ikshealth.com"
+    },
+    {
+      "timestamp": "2026-03-27T11:54:59.791Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T11:50:02.354Z",
+      "adminEmail": "demo@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User demo@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T11:49:42.348Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "UPDATE_USER",
+      "details": "Set demo@ikshealth.com to role data science"
+    },
+    {
+      "timestamp": "2026-03-27T11:49:03.733Z",
+      "adminEmail": "demo@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User demo@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T11:48:43.382Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "UPDATE_OVERRIDES",
+      "details": "Modified custom explicit scope overrides for demo@ikshealth.com"
+    },
+    {
+      "timestamp": "2026-03-27T11:48:21.291Z",
+      "adminEmail": "demo@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User demo@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T11:48:15.090Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "UPDATE_USER",
+      "details": "Set demo@ikshealth.com to role agentic (Password explicitly set)"
+    },
+    {
+      "timestamp": "2026-03-27T11:47:36.812Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "UPDATE_USER",
+      "details": "Set demo@ikshealth.com to role agentic"
+    },
+    {
+      "timestamp": "2026-03-27T11:46:47.248Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "UPDATE_USER",
+      "details": "Set argha.mukherjee@ikshealth.com to role agentic"
+    },
+    {
+      "timestamp": "2026-03-27T11:41:30.808Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "UPDATE_OVERRIDES",
+      "details": "Modified custom explicit scope overrides for argha.mukherjee@ikshealth.com"
+    },
+    {
+      "timestamp": "2026-03-27T09:16:19.238Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T09:14:40.025Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T09:07:39.034Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T08:48:51.911Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T08:48:18.489Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T08:48:04.233Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T08:47:39.527Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    },
+    {
+      "timestamp": "2026-03-27T08:29:59.269Z",
+      "adminEmail": "admin@ikshealth.com",
+      "action": "USER_LOGIN",
+      "details": "User admin@ikshealth.com authenticated successfully"
+    }
+  ],
+  "telemetry": {
+    "admin@ikshealth.com": {
+      "last_login": "2026-04-02T12:40:53.151Z",
+      "pages_visited": [
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-02T12:40:53.427Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-02T12:40:53.180Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-02T11:34:45.556Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-02T11:34:44.479Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-02T11:30:18.075Z"
+        },
+        {
+          "page": "/agents",
+          "timestamp": "2026-04-02T11:30:17.972Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-02T11:29:56.123Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-02T11:29:55.945Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-02T11:28:16.529Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-02T11:28:15.681Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-02T11:26:36.987Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-02T11:26:36.651Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-03-27T13:55:10.393Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T13:55:05.773Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-03-27T13:55:05.538Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T11:55:00.050Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-03-27T11:55:00.046Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T09:16:19.762Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-03-27T09:16:19.756Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T09:14:40.618Z"
+        }
+      ]
+    },
+    "gaurab.anand@ikshealth.com": {
+      "last_login": "2026-04-06T12:10:36.925Z",
+      "pages_visited": [
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-04-06T12:10:39.097Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-06T12:10:37.196Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-06T12:10:37.172Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-04-03T14:14:08.594Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-03T14:14:05.221Z"
+        },
+        {
+          "page": "/about",
+          "timestamp": "2026-04-03T14:14:03.515Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-04-03T13:42:50.997Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-03T13:42:49.365Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-03T13:42:49.132Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-04-03T08:09:19.430Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-03T08:09:18.594Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-03T08:09:18.356Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-04-03T05:26:28.975Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-03T05:26:27.340Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-03T05:26:27.119Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-04-02T12:45:00.426Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-02T12:44:59.066Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-02T12:44:58.596Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-04-02T12:03:42.400Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-02T12:03:39.243Z"
+        }
+      ]
+    },
+    "demo@ikshealth.com": {
+      "last_login": "2026-03-27T14:16:51.326Z",
+      "pages_visited": [
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-03-27T14:16:58.921Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T14:16:51.570Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-03-27T14:16:51.332Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T13:59:39.338Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-03-27T13:59:39.241Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-03-27T13:52:38.464Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T13:52:32.734Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-03-27T13:52:32.507Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-03-27T13:18:20.200Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T13:18:16.685Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-03-27T13:18:16.445Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T11:50:02.643Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-03-27T11:50:02.621Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T11:49:13.027Z"
+        },
+        {
+          "page": "/dashboard/agentic",
+          "timestamp": "2026-03-27T11:49:10.703Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T11:49:04.031Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-03-27T11:49:04.019Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T11:48:21.813Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-03-27T11:48:21.797Z"
+        }
+      ]
+    },
+    "shivani.natani@ikshealth.com": {
+      "last_login": "2026-04-03T13:17:05.328Z",
+      "pages_visited": [
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-04-03T13:17:08.297Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-03T13:17:05.581Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-03T13:17:05.352Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-04-03T10:08:06.963Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-03T10:07:59.969Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-03T10:07:59.934Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-04-03T09:51:32.065Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-03T09:51:29.281Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-03T09:51:29.108Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-04-02T12:41:17.961Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-02T12:41:16.266Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-02T12:41:16.114Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-04-02T12:24:22.621Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-04-02T12:24:19.996Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-04-02T12:24:19.994Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-03-27T14:24:45.612Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T14:24:43.252Z"
+        },
+        {
+          "page": "/login",
+          "timestamp": "2026-03-27T14:24:43.015Z"
+        },
+        {
+          "page": "/dashboard/optimix",
+          "timestamp": "2026-03-27T14:02:59.158Z"
+        },
+        {
+          "page": "/dashboard",
+          "timestamp": "2026-03-27T14:02:56.958Z"
+        }
+      ]
+    }
+  },
+  "maintenance_mode": false
+}

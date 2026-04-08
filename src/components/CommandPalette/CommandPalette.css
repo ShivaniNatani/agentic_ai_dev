@@ -1,0 +1,226 @@
+/* ============================================================
+   COMMAND PALETTE STYLES (PREMIUM GLASSMORPHISM)
+   ============================================================ */
+
+.cmd-palette-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(12px) saturate(120%);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 15vh;
+    animation: cmdFadeIn 0.2s ease-out;
+}
+
+@keyframes cmdFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.cmd-palette-modal {
+    width: 580px;
+    max-width: 90vw;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(32px) saturate(150%);
+    -webkit-backdrop-filter: blur(32px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow:
+        0 24px 48px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: cmdSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cmdSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-16px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Light mode overrides */
+[data-theme="light"] .cmd-palette-overlay {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+[data-theme="light"] .cmd-palette-modal {
+    background: rgba(255, 255, 255, 0.82);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow:
+        0 24px 48px rgba(0, 0, 0, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="light"] .cmd-input {
+    color: #0f172a;
+}
+
+[data-theme="light"] .cmd-item {
+    color: #334155;
+}
+
+[data-theme="light"] .cmd-item.selected {
+    background: rgba(37, 99, 235, 0.08);
+    color: #0f172a;
+}
+
+[data-theme="light"] .cmd-group-title {
+    color: #64748b;
+}
+
+/* Input Section */
+.cmd-palette-search {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 0.75rem;
+}
+
+.cmd-search-icon {
+    font-size: 1.15rem;
+    color: #64748b;
+}
+
+.cmd-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    font-size: 1rem;
+    color: #f1f5f9;
+    outline: none;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+}
+
+.cmd-input::placeholder {
+    color: #64748b;
+}
+
+.cmd-esc-hint {
+    font-size: 0.65rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 3px 8px;
+    border-radius: 6px;
+    color: #64748b;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    letter-spacing: 0.03em;
+}
+
+/* Results List */
+.cmd-palette-results {
+    max-height: 360px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+.cmd-group-title {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #64748b;
+    padding: 0.75rem 0.75rem 0.35rem;
+    margin-top: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.cmd-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 0.75rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    color: #cbd5e1;
+    margin-bottom: 2px;
+}
+
+.cmd-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.cmd-item-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.cmd-item-icon {
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+}
+
+.cmd-item-label {
+    font-size: 0.88rem;
+    font-weight: 500;
+}
+
+/* Active / Selected State */
+.cmd-item.selected {
+    background: rgba(99, 102, 241, 0.12);
+    color: #f1f5f9;
+}
+
+.cmd-item.selected .cmd-item-icon {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+.cmd-item.selected .cmd-item-shortcut {
+    color: #e2e8f0;
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.cmd-item-shortcut {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #64748b;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Empty State */
+.cmd-empty {
+    padding: 2.5rem;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.88rem;
+}
+
+/* Footer */
+.cmd-palette-footer {
+    padding: 0.5rem 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.65rem;
+    color: #64748b;
+    display: flex;
+    gap: 1rem;
+}

@@ -1,0 +1,211 @@
+/* ============================================================
+   NEURAL TRACE VISUALIZATION (AURORA THEME)
+   ============================================================ */
+
+.neural-trace-container {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: var(--space-6);
+    min-height: 600px;
+    height: auto;
+    background: var(--aurora-cosmos);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    overflow: visible;
+    touch-action: pan-y;
+}
+
+@media (max-width: 1024px) {
+    .neural-trace-container {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: auto;
+    }
+
+    .neural-graph-area {
+        height: 400px;
+    }
+
+    .neural-logs-panel {
+        height: 300px;
+        border-left: none;
+        border-top: 1px solid var(--glass-border);
+        padding-left: 0;
+        padding-top: var(--space-6);
+    }
+}
+
+/* GRAPH AREA */
+.neural-graph-area {
+    position: relative;
+    background: radial-gradient(circle at center, rgba(0, 245, 212, 0.05) 0%, transparent 70%);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--glass-border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.neural-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+/* Nodes */
+.trace-node circle {
+    fill: var(--glass-bg);
+    stroke: var(--aurora-cyan);
+    stroke-width: 2px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.trace-node.active circle {
+    fill: var(--aurora-cyan);
+    stroke: white;
+    filter: drop-shadow(0 0 10px var(--aurora-cyan));
+}
+
+.trace-node text {
+    fill: var(--text-secondary);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    text-anchor: middle;
+    pointer-events: none;
+    transition: fill 0.3s;
+}
+
+.trace-node.active text {
+    fill: var(--text-primary);
+    font-weight: 700;
+}
+
+/* Edges */
+.trace-edge {
+    stroke: var(--glass-border);
+    stroke-width: 2px;
+    fill: none;
+}
+
+.trace-edge.active {
+    stroke: var(--aurora-cyan);
+    opacity: 0.5;
+}
+
+/* Packets (Animation) */
+.trace-packet {
+    fill: white;
+    filter: drop-shadow(0 0 5px white);
+}
+
+/* LOGS AREA */
+.neural-logs-panel {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--glass-border);
+    padding-left: var(--space-6);
+}
+
+.neural-logs-header {
+    margin-bottom: var(--space-4);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--status-success);
+    font-weight: 700;
+    text-transform: uppercase;
+    background: rgba(74, 222, 128, 0.1);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+}
+
+.live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--status-success);
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+}
+
+.logs-feed {
+    flex: 1;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.log-entry {
+    padding: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 2px solid transparent;
+    animation: slideInRight 0.2s ease-out;
+}
+
+.log-entry.type-info {
+    border-color: var(--aurora-blue);
+}
+
+.log-entry.type-success {
+    border-color: var(--status-success);
+    background: rgba(74, 222, 128, 0.05);
+}
+
+.log-entry.type-process {
+    border-color: var(--aurora-purple);
+}
+
+.log-entry.type-error {
+    border-color: var(--status-error);
+}
+
+.log-timestamp {
+    color: var(--text-muted);
+    margin-right: 8px;
+}
+
+.log-message {
+    color: var(--text-primary);
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

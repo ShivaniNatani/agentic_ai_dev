@@ -1,0 +1,338 @@
+{
+  "blacklist": [],
+  "users": {
+    "admin@ikshealth.com": {
+      "role": "admin",
+      "password": "admin"
+    },
+    "shivani.natani@ikshealth.com": {
+      "role": "admin",
+      "password": "shivani.natani"
+    },
+    "argha.mukherjee@ikshealth.com": {
+      "role": "admin",
+      "password": "argha.mukherjee"
+    },
+    "developer@ikshealth.com": {
+      "role": "developer",
+      "password": "developer"
+    },
+    "bhavin@ikshealth.com": {
+      "role": "mlops",
+      "password": "bhavin"
+    },
+    "akshay.nasarpuri@ikshealth.com": {
+      "role": "agentic",
+      "password": "akshay.nasarpuri"
+    },
+    "user@ikshealth.com": {
+      "role": "user",
+      "password": "user"
+    }
+  },
+  "roles": {
+    "admin": {
+      "projects": [
+        "agentic",
+        "mlops",
+        "optimix"
+      ],
+      "agents": [
+        "all"
+      ],
+      "clients": [
+        "all"
+      ],
+      "pages": [
+        "dashboard",
+        "project-overview",
+        "agents",
+        "sandbox",
+        "release-notes",
+        "stakeholder-releases",
+        "clients",
+        "contact",
+        "about",
+        "setup",
+        "broadcast"
+      ]
+    },
+    "mlops": {
+      "projects": [
+        "mlops"
+      ],
+      "agents": [],
+      "clients": [
+        "OrthoNY",
+        "CDPHP",
+        "Palomar Health",
+        "Optum Care"
+      ],
+      "pages": [
+        "dashboard",
+        "project-overview",
+        "release-notes",
+        "about",
+        "contact"
+      ]
+    },
+    "agentic": {
+      "projects": [
+        "agentic"
+      ],
+      "agents": [
+        "pkb",
+        "writeback",
+        "browser-agent-pa"
+      ],
+      "clients": [
+        "all"
+      ],
+      "pages": [
+        "dashboard",
+        "agents",
+        "sandbox",
+        "release-notes",
+        "about",
+        "contact"
+      ]
+    },
+    "developer": {
+      "projects": [
+        "mlops",
+        "agentic"
+      ],
+      "agents": [
+        "all"
+      ],
+      "clients": [
+        "all"
+      ],
+      "pages": [
+        "dashboard",
+        "agents",
+        "sandbox",
+        "release-notes",
+        "about",
+        "contact"
+      ]
+    },
+    "user": {
+      "projects": [],
+      "agents": [],
+      "clients": [],
+      "pages": [
+        "dashboard",
+        "about"
+      ]
+    }
+  },
+  "catalog": {
+    "projects": {
+      "agentic": {
+        "label": "Agentic AI",
+        "agents": {
+          "pkb": {
+            "label": "PKB Agent",
+            "clients": [
+              "UnitedHealthcare",
+              "Aetna",
+              "Cigna"
+            ],
+            "subProjects": [
+              {
+                "id": "PKB-1",
+                "name": "Payer Policy Surveillance V-1"
+              },
+              {
+                "id": "PKB-2",
+                "name": "Payer Policy Surveillance V-2 + 3"
+              },
+              {
+                "id": "NBA-1",
+                "name": "Next Best Action Recommendation"
+              },
+              {
+                "id": "MNA-1",
+                "name": "Medical Necessity Agent (Policy Extraction)"
+              },
+              {
+                "id": "EVE-1",
+                "name": "ASK EVE"
+              }
+            ]
+          },
+          "writeback": {
+            "label": "Writeback Agent",
+            "clients": [
+              "CDPHP",
+              "OrthoNY",
+              "AHN",
+              "PDP",
+              "PHMG",
+              "Revere",
+              "PEH"
+            ],
+            "subProjects": [
+              {
+                "id": "CDP-ALL",
+                "name": "CDPHP - ONY Writeback"
+              },
+              {
+                "id": "ORT-ALL",
+                "name": "OrthoNY ModMed Writeback"
+              },
+              {
+                "id": "AHN-1",
+                "name": "AHN WriteBack"
+              },
+              {
+                "id": "PDP-1",
+                "name": "PDP Writeback (NextGen v6)"
+              },
+              {
+                "id": "PHM-ALL",
+                "name": "PHMG Writeback"
+              },
+              {
+                "id": "REV-1",
+                "name": "Revere Writeback"
+              },
+              {
+                "id": "PEH-1",
+                "name": "EHR PEH Writeback (Integration Layer)"
+              }
+            ]
+          },
+          "browser-agent-pa": {
+            "label": "Browser Agent PA",
+            "clients": [
+              "BCBS",
+              "BCBS AZ",
+              "Premera",
+              "Regence",
+              "Well Care",
+              "Well Point",
+              "UHC",
+              "Carelon",
+              "Evolent",
+              "OrthoNY",
+              "Fidelis",
+              "Availity",
+              "Cigna",
+              "One Heart",
+              "Revere"
+            ],
+            "subProjects": [
+              {
+                "id": "PA-1",
+                "name": "BCBS IL PA Submission"
+              },
+              {
+                "id": "PA-2",
+                "name": "CMM / GIA Availity PA (BCBS of AZ)"
+              },
+              {
+                "id": "PA-3",
+                "name": "Premera / GIA Availity PA Alaska"
+              },
+              {
+                "id": "PA-4",
+                "name": "Regence Utah / GIA Availity PA"
+              },
+              {
+                "id": "PA-5",
+                "name": "Regence Idaho / GIA Availity PA"
+              },
+              {
+                "id": "PA-6",
+                "name": "Well Care / GIA Availity PA"
+              },
+              {
+                "id": "PA-7",
+                "name": "Well Point / GIA Availity PA"
+              },
+              {
+                "id": "PA-8",
+                "name": "CMM UHC PA"
+              },
+              {
+                "id": "PA-9",
+                "name": "CMM Carelon PA (Radiology/Internal Med)"
+              },
+              {
+                "id": "PA-10",
+                "name": "CMM Evolent PA"
+              },
+              {
+                "id": "PA-11",
+                "name": "GIA Carelon PA"
+              },
+              {
+                "id": "PA-12",
+                "name": "Evolent-OrthoNY"
+              },
+              {
+                "id": "PA-13",
+                "name": "RADMD/Fidelis (Status Check)"
+              },
+              {
+                "id": "PA-14",
+                "name": "Code Tagging"
+              },
+              {
+                "id": "REF-1",
+                "name": "Availity Referral Determination"
+              },
+              {
+                "id": "REF-2",
+                "name": "UHC Referral Determination"
+              },
+              {
+                "id": "REF-3",
+                "name": "Cigna Referral Determination"
+              },
+              {
+                "id": "REF-4",
+                "name": "One Heart Referral Agent"
+              },
+              {
+                "id": "REF-5",
+                "name": "Revere - SelectHealth PA"
+              }
+            ]
+          }
+        }
+      },
+      "mlops": {
+        "label": "MLOps",
+        "agents": {},
+        "clients": [
+          "OrthoNY",
+          "CDPHP",
+          "Palomar Health",
+          "Optum Care"
+        ]
+      },
+      "optimix": {
+        "label": "Optimix",
+        "agents": {},
+        "clients": []
+      }
+    },
+    "pages": [
+      "dashboard",
+      "project-overview",
+      "agents",
+      "sandbox",
+      "release-notes",
+      "stakeholder-releases",
+      "clients",
+      "contact",
+      "about",
+      "setup",
+      "broadcast"
+    ]
+  },
+  "custom_user_overrides": {}
+}

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IKS Access Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        :root {
+            --bg-base: #030712;
+            --bg-surface: rgba(17, 24, 39, 0.7);
+            --bg-panel: rgba(31, 41, 55, 0.4);
+            --border: rgba(55, 65, 81, 0.5);
+            --border-hover: rgba(99, 102, 241, 0.5);
+            --accent: #0ea5e9;
+            --accent-hover: #0284c7;
+            --secondary: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font: 'Plus Jakarta Sans', sans-serif;
+            --shadow-glow: 0 0 20px rgba(14, 165, 233, 0.15);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { 
+            font-family: var(--font); 
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(ellipse at top right, rgba(99, 102, 241, 0.15), transparent 40%),
+                radial-gradient(ellipse at bottom left, rgba(14, 165, 233, 0.1), transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-main); 
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width:1200px; margin:0 auto; padding:2.5rem 2rem; }
+
+        /* Typography & Header */
+        h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
+        .header { 
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-bottom: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem;
+        }
+        .header-title { background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 2.25rem; margin-bottom: 0.25rem; }
+        .header-subtitle { color: var(--text-muted); font-size: 0.95rem; font-weight: 500; }
+
+        /* Buttons */
+        .btn { 
+            background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid var(--border);
+            padding: 0.6rem 1.25rem; border-radius: 8px; font-family: var(--font); font-weight: 600; font-size: 0.875rem; 
+            cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), var(--secondary)); border: none; box-shadow: var(--shadow-glow); }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 25px rgba(99, 102, 241, 0.4); }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: white; }
+        .btn-sm { padding: 0.4rem 0.85rem; font-size: 0.75rem; border-radius: 6px; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 0.75rem; margin-bottom: 2rem; background: var(--bg-surface); padding: 0.5rem; border-radius: 12px; border: 1px solid var(--border); backdrop-filter: blur(10px); width: max-content; }
+        .tab { 
+            background: transparent; border: none; color: var(--text-muted);
+            padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.3s;
+        }
+        .tab:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
+        .tab.active { background: rgba(255,255,255,0.1); color: var(--text-main); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+
+        /* Panels & Cards */
+        .panel { 
+            background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; 
+            padding: 2rem; margin-bottom: 2rem; backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: fadeUp 0.4s ease forwards;
+        }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .panel h2 { font-size: 1.35rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+
+        /* Inputs */
+        .input-group { display: flex; flex-direction: column; gap: 0.4rem; flex: 1; min-width: 220px; }
+        label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        input, select { 
+            background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); color: var(--text-main);
+            padding: 0.75rem 1rem; border-radius: 8px; font-family: var(--font); font-size: 0.95rem; outline: none; transition: all 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--secondary); background: rgba(30, 41, 59, 0.8); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+        .row-form { display: flex; gap: 1.25rem; align-items: flex-end; flex-wrap: wrap; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px dashed var(--border); margin-bottom: 2rem; }
+
+        /* Tables */
+        .table-container { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); }
+        td { padding: 1rem; border-bottom: 1px solid rgba(55,65,81,0.3); font-size: 0.9rem; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        /* Badges / Tags */
+        .badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; border: 1px solid transparent; margin: 0.15rem; }
+        .badge-cyan { background: rgba(14, 165, 233, 0.1); color: #38bdf8; border-color: rgba(14, 165, 233, 0.2); }
+        .badge-indigo { background: rgba(99, 102, 241, 0.1); color: #818cf8; border-color: rgba(99, 102, 241, 0.2); }
+        .badge-emerald { background: rgba(16, 185, 129, 0.1); color: #34d399; border-color: rgba(16, 185, 129, 0.2); }
+        .badge-neutral { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); border-color: rgba(148, 163, 184, 0.2); }
+
+        /* Multi Select Roles UI */
+        .role-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; transition: transform 0.2s; }
+        .role-card:hover { border-color: var(--border-hover); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .role-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem;}
+        .role-header h3 { color: var(--text-main); font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+        .role-section { margin-bottom: 1.5rem; }
+        .role-section:last-child { margin-bottom: 0; }
+        .chip-container { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; background: rgba(0,0,0,0.15); padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); min-height: 52px; }
+        .role-chip { background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #c7d2fe; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 500; transition: all 0.2s; }
+        .role-chip:hover { background: rgba(99, 102, 241, 0.25); }
+        .role-chip button { background: none; border: none; color: #a5b4fc; cursor: pointer; font-size: 1rem; line-height: 1; transition: color 0.1s; }
+        .role-chip button:hover { color: #fff; }
+        
+        .role-add-dropdown { display: flex; gap: 0.4rem; }
+        .role-add-dropdown select { background: var(--bg-base); font-size: 0.8rem; padding: 0.4rem 0.75rem; border-color: rgba(255,255,255,0.1); height: 32px; }
+        .role-add-dropdown .btn-add { background: var(--secondary); color: white; border: none; border-radius: 6px; width: 32px; height: 32px; cursor: pointer; font-size: 1.1rem; line-height: 1; display:flex; align-items:center; justify-content:center; }
+        .role-add-dropdown .btn-add:hover { background: #4f46e5; }
+
+        /* Login Screen */
+        .login-overlay { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg-base); }
+        .login-box { background:var(--bg-surface); padding:3rem; border-radius:20px; border:1px solid var(--border); width:100%; max-width:440px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); position:relative; overflow:hidden; }
+        .login-box::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg, var(--accent), var(--secondary)); }
+        .brand-icon { width: 56px; height: 56px; background: rgba(99, 102, 241, 0.1); border-radius: 16px; border: 1px solid rgba(99,102,241,0.2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 1.5rem; color: var(--secondary); }
+
+        /* Modals */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; animation: fadeIn 0.2s; }
+        .modal { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; width: 100%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+        /* Alerts */
+        .alert { padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 500; font-size: 0.9rem; display: flex; align-items: center; gap: 0.75rem; animation: slideDown 0.3s ease; }
+        .alert-error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .alert-success { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+        @keyframes slideDown { from{opacity:0; transform:translateY(-10px);} to{opacity:1; transform:translateY(0);} }
+        
+        /* Empty State */
+        .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
+        .empty-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5; }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+const API = '/api/access-control';
+
+// ─── Icons ──────────────────────────────────────────
+const IconUser = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+const IconLock = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
+const IconFolder = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>;
+const IconShield = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+const IconCheck= () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>;
+const IconKey = () => <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>;
+const IconEdit = () => <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
+const IconActivity = () => <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>;
+const IconDownload = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+const IconUpload = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
+
+function App() {
+    const [token, setToken] = useState(() => localStorage.getItem('iks_admin_token'));
+    if (!token) return <LoginScreen onLogin={t => { setToken(t); localStorage.setItem('iks_admin_token', t); }} />;
+    return <AdminPanel token={token} onLogout={() => { setToken(null); localStorage.removeItem('iks_admin_token'); }} />;
+}
+
+// ─── LOGIN SCREEN ───────────────────────────────────
+function LoginScreen({ onLogin }) {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [err, setErr] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault(); setLoading(true); setErr('');
+        try {
+            const r = await fetch(`${API}/login`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await r.json();
+            if (!r.ok || !data.success) throw new Error(data.message || 'Authentication Failed');
+            if (data.user.role !== 'admin') throw new Error('Insufficient Privileges. Admins only.');
+            onLogin(btoa(`${data.user.email}:${data.user.role}`));
+        } catch (error) { setErr(error.message); } 
+        finally { setLoading(false); }
+    };
+
+    return (
+        <div className="login-overlay">
+            <div className="login-box">
+                <div className="brand-icon"><IconShield /></div>
+                <h1 style={{textAlign:'center', marginBottom:'0.5rem'}}>Central Access Control</h1>
+                <p style={{textAlign:'center', color:'var(--text-muted)', marginBottom:'2rem', fontSize:'0.9rem'}}>Secure administration interface</p>
+                {err && <div className="alert alert-error"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> {err}</div>}
+                <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:'1.25rem'}}>
+                    <div className="input-group">
+                        <label>Admin Email</label>
+                        <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin@ikshealth.com" />
+                    </div>
+                    <div className="input-group">
+                        <label>Master Password</label>
+                        <input type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" />
+                    </div>
+                    <button type="submit" className="btn btn-primary" style={{width:'100%', padding:'0.9rem', marginTop:'0.5rem', fontSize:'1rem'}} disabled={loading}>
+                        {loading ? 'Verifying...' : 'Authorize Access'}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+// ─── ADMIN MAIN APP ──────────────────────────────────
+function AdminPanel({ token, onLogout }) {
+    const [tab, setTab] = useState('users');
+    const [cfg, setCfg] = useState(null);
+    const [msg, setMsg] = useState(null);
+
+    const load = useCallback(async () => {
+        try {
+            const r = await fetch(`${API}/config`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (r.status === 401 || r.status === 403) return onLogout();
+            setCfg(await r.json()); setMsg(null);
+        } catch(e) { setMsg({type:'alert-error',text:'Connection lost to access server.'}); }
+    }, [token, onLogout]);
+
+    useEffect(() => { load(); }, [load]);
+
+    const apiCall = async (path, method='POST', body=null) => {
+        try {
+            const opts = { method, headers:{'Content-Type':'application/json', 'Authorization': `Bearer ${token}`} };
+            if (body) opts.body = JSON.stringify(body);
+            const r = await fetch(`${API}${path}`, opts);
+            if (r.status === 401 || r.status === 403) { onLogout(); return false; }
+            const d = await r.json();
+            if (!r.ok) { setMsg({type:'alert-error',text:d.message||'Action failed'}); return false; }
+            setMsg({type:'alert-success',text:'Configuration updated successfully'});
+            setTimeout(() => setMsg(null), 3000);
+            await load();
+            return true;
+        } catch(e) { setMsg({type:'alert-error',text:'Network error occurred'}); return false; }
+    };
+
+    const toggleMaintenance = async () => {
+        if (!confirm(`Are you sure you want to turn ${cfg.maintenance_mode ? 'OFF' : 'ON'} global Maintenance Mode?`)) return;
+        await apiCall('/maintenance', 'PUT', { enabled: !cfg.maintenance_mode });
+    };
+
+    const downloadBackup = () => {
+        const payload = JSON.parse(JSON.stringify(cfg));
+        const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `iks_access_backup_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+    };
+
+    const handleRestore = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            try {
+                const payload = JSON.parse(evt.target.result);
+                if (confirm('Are you sure you want to completely overwrite the current access configuration with this backup?')) {
+                    await apiCall('/restore', 'PUT', payload);
+                }
+            } catch(error) { setMsg({type:'alert-error', text:'Invalid JSON backup file.'}); }
+            e.target.value = null; // reset
+        };
+        reader.readAsText(file);
+    };
+
+    if (!cfg) return <div className="container" style={{textAlign:'center', marginTop:'4rem'}}>Initializing secure session...</div>;
+
+    const rolesList = Object.keys(cfg.roles);
+    const catalog = cfg.catalog || { projects:{}, pages:[] };
+    const projectKeys = Object.keys(catalog.projects || {});
+    const allAgents = [], allClients = new Set();
+    projectKeys.forEach(pk => {
+        const ags = catalog.projects[pk]?.agents || {};
+        Object.entries(ags).forEach(([aid, a]) => {
+            allAgents.push({ id: aid, label: a.label, project: pk });
+            (a.clients || []).forEach(c => allClients.add(c));
+        });
+        (catalog.projects[pk].clients || []).forEach(c => allClients.add(c));
+    });
+
+    return (
+        <div className="container">
+            <div className="header">
+                <div>
+                    <h1 className="header-title">Access Control Center</h1>
+                    <p className="header-subtitle">Real-time dynamic permission management</p>
+                </div>
+                <div style={{display:'flex', gap:'0.75rem'}}>
+                    <button className={`btn ${cfg.maintenance_mode ? 'btn-danger' : ''}`} onClick={toggleMaintenance} style={{borderColor: cfg.maintenance_mode ? 'var(--danger)' : 'var(--border)'}}>
+                        {cfg.maintenance_mode ? '🚨 Maintenance ON' : '⚙️ Maintenance OFF'}
+                    </button>
+                    <button className="btn" onClick={downloadBackup} title="Export Matrix Backup"><IconDownload /></button>
+                    <label className="btn" title="Restore Matrix Backup" style={{cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center'}}>
+                        <IconUpload />
+                        <input type="file" accept=".json" style={{display:'none'}} onChange={handleRestore} />
+                    </label>
+                    <button className="btn" onClick={load}>Refresh Data</button>
+                    <button className="btn btn-primary" onClick={onLogout}><IconLock /> Lock Session</button>
+                </div>
+            </div>
+
+            {msg && <div className={`alert ${msg.type}`}><IconCheck /> {msg.text}</div>}
+
+            <div className="tabs">
+                <button className={`tab ${tab==='users'?'active':''}`} onClick={()=>setTab('users')}><IconUser style={{verticalAlign:'middle', marginRight:'6px'}}/>Users</button>
+                <button className={`tab ${tab==='roles'?'active':''}`} onClick={()=>setTab('roles')}><IconShield style={{verticalAlign:'middle', marginRight:'6px'}}/>Roles Matrix</button>
+                <button className={`tab ${tab==='catalog'?'active':''}`} onClick={()=>setTab('catalog')}><IconFolder style={{verticalAlign:'middle', marginRight:'6px'}}/>Live Catalog</button>
+                <button className={`tab ${tab==='audit'?'active':''}`} onClick={()=>setTab('audit')}><span style={{verticalAlign:'middle', marginRight:'6px'}}>📜</span>Audit Logs</button>
+            </div>
+
+            {tab==='users' && <UsersTab cfg={cfg} roles={rolesList} projectKeys={projectKeys} allAgents={allAgents} allClients={[...allClients].sort()} api={apiCall} />}
+            {tab==='roles' && <RolesTab cfg={cfg} roles={rolesList} catalog={catalog} projectKeys={projectKeys} allAgents={allAgents} allClients={[...allClients].sort()} api={apiCall} />}
+            {tab==='catalog' && <CatalogTab catalog={catalog} api={apiCall} />}
+            {tab==='audit' && <AuditTab logs={cfg.audit_logs || []} />}
+        </div>
+    );
+}
+
+// ─── USERS TAB ──────────────────────────────────────
+function UsersTab({ cfg, roles, projectKeys, allAgents, allClients, api }) {
+    const [email, setEmail] = useState('');
+    const [role, setRole] = useState(roles[0] || 'user');
+    
+    // Modal state for editing user (role and password)
+    const [editModal, setEditModal] = useState({ open: false, email: '', newPassword: '', role: '' });
+    // Modal state for custom scope overrides
+    const [scopeModal, setScopeModal] = useState({ open: false, email: '', overrides: { projects:[], agents:[], clients:[], pages:[] } });
+    const [activityModal, setActivityModal] = useState({ open: false, email: '' });
+
+    const openActivity = (userEmail) => setActivityModal({ open: true, email: userEmail });
+
+    const openEditModal = (userEmail, currentRole) => {
+        setEditModal({ open: true, email: userEmail, newPassword: '', role: currentRole });
+    };
+
+    const openScopeModal = (userEmail) => {
+        const existing = cfg.custom_user_overrides?.[userEmail] || { projects:[], agents:[], clients:[], pages:[] };
+        setScopeModal({ open: true, email: userEmail, overrides: { ...existing } });
+    };
+
+    const handleEditSave = async (e) => {
+        e.preventDefault();
+        const payload = { email: editModal.email, role: editModal.role };
+        if (editModal.newPassword !== '') payload.password = editModal.newPassword;
+        const ok = await api('/users', 'POST', payload);
+        if (ok) setEditModal({open: false, email:'', newPassword:'', role:''});
+    };
+    
+    const handleScopeSave = async (e) => {
+        e.preventDefault();
+        const ok = await api(`/users/${encodeURIComponent(scopeModal.email)}/overrides`, 'PUT', scopeModal.overrides);
+        if (ok) setScopeModal({open: false, email:'', overrides: {projects:[],agents:[],clients:[],pages:[]}});
+    };
+
+    const allPages = cfg.catalog?.pages || [];
+    const allAgentIds = allAgents.map(a=>a.id);
+
+    return (
+        <div className="panel">
+            <h2>User Provisioning</h2>
+            <form className="row-form" onSubmit={e => { e.preventDefault(); api('/users','POST',{email,role}); setEmail(''); }}>
+                <div className="input-group">
+                    <label>User Email Address</label>
+                    <input type="email" placeholder="e.g. external.client@hospital.org" value={email} onChange={e=>setEmail(e.target.value)} required />
+                </div>
+                <div className="input-group" style={{maxWidth:'250px'}}>
+                    <label>Assign Role</label>
+                    <select value={role} onChange={e=>setRole(e.target.value)}>
+                        {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                </div>
+                <button type="submit" className="btn btn-primary" style={{height:'44px'}}>Provision Access</button>
+            </form>
+
+            <div className="table-container">
+                <table>
+                    <thead><tr><th>Identity / Email</th><th>Assigned Role</th><th>Authentication</th><th>Effective Scope</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        {Object.entries(cfg.users).map(([em, u]) => (
+                            <tr key={em}>
+                                <td style={{fontWeight:600}}>{em}</td>
+                                <td><span className="badge badge-cyan">{u.role}</span></td>
+                                <td>
+                                    {u.hasPassword ? 
+                                        <div style={{display:'flex', alignItems:'center', gap:'0.4rem', color:'var(--success)', fontSize:'0.8rem', fontWeight:600}}><IconKey/> Custom Password</div> : 
+                                        <div style={{display:'flex', alignItems:'center', gap:'0.4rem', color:'var(--text-muted)', fontSize:'0.8rem'}}><IconShield/> LDAP Standard</div>
+                                    }
+                                </td>
+                                <td>
+                                    <div style={{display:'flex', gap:'0.25rem', flexWrap:'wrap'}}>
+                                        {Array.from(new Set([...(cfg.roles[u.role]?.projects || []), ...(cfg.custom_user_overrides?.[em]?.projects || [])])).sort().map(p => <span key={p} className="badge badge-indigo">{p}</span>)}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style={{display:'flex', gap:'0.5rem'}}>
+                                        <button className="btn btn-sm" onClick={() => openActivity(em)} title="View Telemetry Activity"><IconActivity/></button>
+                                        <button className="btn btn-sm" onClick={() => openEditModal(em, u.role)} title="Edit User"><IconEdit/></button>
+                                        <button className="btn btn-sm" style={{borderColor: 'var(--secondary)', color: 'var(--secondary)'}} onClick={() => openScopeModal(em)} title="Custom Overrides">⚙️ Scope</button>
+                                        <button className="btn btn-danger btn-sm" onClick={()=>api(`/users/${encodeURIComponent(em)}`,'DELETE')}>Revoke</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                        {Object.keys(cfg.users).length===0 && <tr><td colSpan="5" className="empty-state">No users provisioned.</td></tr>}
+                    </tbody>
+                </table>
+            </div>
+
+            {editModal.open && (
+                <div className="modal-overlay">
+                    <div className="modal">
+                        <h3>Edit User</h3>
+                        <p style={{color:'var(--text-muted)', fontSize:'0.85rem', marginBottom:'1.5rem'}}>Update role or set an explicit password for <strong>{editModal.email}</strong>.</p>
+                        <form onSubmit={handleEditSave} style={{display:'flex', flexDirection:'column', gap:'1.25rem'}}>
+                            <div className="input-group">
+                                <label>Role</label>
+                                <select value={editModal.role} onChange={e=>setEditModal({...editModal, role: e.target.value})}>
+                                    {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                                </select>
+                            </div>
+                            <div className="input-group">
+                                <label>New Password</label>
+                                <input type="text" value={editModal.newPassword} onChange={e=>setEditModal({...editModal, newPassword: e.target.value})} placeholder="Leave blank to keep current" />
+                            </div>
+                            <div style={{display:'flex', gap:'0.75rem', justifyContent:'flex-end'}}>
+                                <button type="button" className="btn" onClick={()=>setEditModal({...editModal, open:false})}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            
+            {scopeModal.open && (
+                <div className="modal-overlay">
+                    <div className="modal" style={{maxWidth:'600px'}}>
+                        <h3>Custom Explicit Overrides</h3>
+                        <p style={{color:'var(--text-muted)', fontSize:'0.85rem', marginBottom:'1.5rem'}}>Add specific projects/clients to <strong>{scopeModal.email}</strong>, overriding their base role constraints.</p>
+                        <form onSubmit={handleScopeSave} style={{display:'flex', flexDirection:'column', gap:'1rem', maxHeight:'65vh', overflowY:'auto', paddingRight:'10px'}}>
+                            
+                            <SleekMultiSelect label="Allowed Projects" items={projectKeys} selected={scopeModal.overrides.projects} 
+                                onAdd={v => setScopeModal({ ...scopeModal, overrides: {...scopeModal.overrides, projects: [...scopeModal.overrides.projects, v]} })} 
+                                onRemove={v => setScopeModal({ ...scopeModal, overrides: {...scopeModal.overrides, projects: scopeModal.overrides.projects.filter(x=>x!==v)} })} />
+                                
+                            <SleekMultiSelect label="Allowed Agents" items={['all', ...allAgentIds]} selected={scopeModal.overrides.agents} 
+                                onAdd={v => setScopeModal({ ...scopeModal, overrides: {...scopeModal.overrides, agents: [...scopeModal.overrides.agents, v]} })} 
+                                onRemove={v => setScopeModal({ ...scopeModal, overrides: {...scopeModal.overrides, agents: scopeModal.overrides.agents.filter(x=>x!==v)} })} />
+                                
+                            <SleekMultiSelect label="Allowed Clients/Payers" items={['all', ...allClients]} selected={scopeModal.overrides.clients} 
+                                onAdd={v => setScopeModal({ ...scopeModal, overrides: {...scopeModal.overrides, clients: [...scopeModal.overrides.clients, v]} })} 
+                                onRemove={v => setScopeModal({ ...scopeModal, overrides: {...scopeModal.overrides, clients: scopeModal.overrides.clients.filter(x=>x!==v)} })} />
+                                
+                            <SleekMultiSelect label="UI Tabs Scope" items={allPages} selected={scopeModal.overrides.pages} 
+                                onAdd={v => setScopeModal({ ...scopeModal, overrides: {...scopeModal.overrides, pages: [...scopeModal.overrides.pages, v]} })} 
+                                onRemove={v => setScopeModal({ ...scopeModal, overrides: {...scopeModal.overrides, pages: scopeModal.overrides.pages.filter(x=>x!==v)} })} />
+
+                            <div style={{display:'flex', gap:'0.75rem', justifyContent:'flex-end', marginTop:'1rem', paddingTop:'1rem', borderTop:'1px solid var(--border)'}}>
+                                <button type="button" className="btn" onClick={()=>setScopeModal({...scopeModal, open:false})}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">Save Overrides</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {activityModal.open && (
+                <div className="modal-overlay" onClick={(e)=> {if(e.target===e.currentTarget) setActivityModal({open:false, email:''})}}>
+                    <div className="modal" style={{maxWidth:'500px'}}>
+                        <h3>Activity: {activityModal.email}</h3>
+                        {(() => {
+                            const t = cfg.telemetry?.[activityModal.email];
+                            if (!t) return <p className="empty-state">No telemetry data recorded for this user yet.</p>;
+                            return (
+                                <div>
+                                    <p style={{background:'rgba(0,0,0,0.2)', padding:'1rem', borderRadius:'8px', fontSize:'0.9rem', marginBottom:'1.5rem'}}>
+                                        <strong>Last System Login:</strong> <br/>
+                                        <span style={{color:'var(--accent)'}}>{t.last_login ? new Date(t.last_login).toLocaleString() : 'Never logged in'}</span>
+                                    </p>
+                                    <h4>Recent Page Views</h4>
+                                    <ul style={{listStyle:'none', padding:0, marginTop:'0.75rem', maxHeight:'40vh', overflowY:'auto'}}>
+                                        {(t.pages_visited || []).map((pv, i) => (
+                                            <li key={i} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'0.75rem', borderBottom:'1px solid var(--border)', fontSize:'0.85rem'}}>
+                                                <code style={{color:'var(--text-main)', background:'rgba(255,255,255,0.05)', padding:'0.2rem 0.5rem', borderRadius:'4px'}}>{pv.page}</code>
+                                                <span style={{color:'var(--text-muted)'}}>{new Date(pv.timestamp).toLocaleString()}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            );
+                        })()}
+                        <div style={{display:'flex', justifyContent:'flex-end', marginTop:'1.5rem'}}>
+                            <button className="btn" onClick={()=>setActivityModal({open:false, email:''})}>Close Activity</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── ROLES TAB ──────────────────────────────────────
+function SleekMultiSelect({ label, items, selected, onAdd, onRemove }) {
+    const [val, setVal] = useState('');
+    const available = items.filter(i => !selected.includes(i));
+    
+    return (
+        <div className="role-section">
+            <label style={{marginBottom:'0.5rem', display:'block'}}>{label}</label>
+            <div className="chip-container">
+                {selected.map(s => (
+                    <span key={s} className="role-chip">
+                        {s} <button type="button" onClick={()=>onRemove(s)}>&times;</button>
+                    </span>
+                ))}
+                
+                {available.length > 0 && (
+                    <div className="role-add-dropdown">
+                        <select value={val} onChange={e => setVal(e.target.value)}>
+                            <option value="">Select to add...</option>
+                            {available.map(a => <option key={a} value={a}>{a}</option>)}
+                        </select>
+                        <button type="button" className="btn-add" onClick={()=> { if(val) { onAdd(val); setVal(''); } }}>+</button>
+                    </div>
+                )}
+                {selected.length === 0 && available.length === 0 && <span style={{color:'var(--text-muted)', fontSize:'0.8rem'}}>No items available.</span>}
+                {selected.length === 0 && available.length > 0 && val === '' && <span style={{color:'var(--text-muted)', fontSize:'0.8rem', fontStyle:'italic', paddingLeft:'0.5rem'}}>None explicitly assigned.</span>}
+            </div>
+        </div>
+    );
+}
+
+function RolesTab({ cfg, roles, catalog, projectKeys, allAgents, allClients, api }) {
+    const [newRole, setNewRole] = useState('');
+    const allPages = catalog.pages || [];
+    const allAgentIds = allAgents.map(a=>a.id);
+    const updateRole = (role, field, values) => api(`/roles/${encodeURIComponent(role)}`, 'PUT', { [field]: values });
+
+    return (
+        <div>
+            <div className="panel" style={{paddingBottom:'2rem'}}>
+                <h2>Define Access Matrix</h2>
+                <form className="row-form" style={{margin:0}} onSubmit={e => { e.preventDefault(); api('/roles','POST',{role:newRole.trim().toLowerCase(),permissions:{projects:[],agents:[],clients:[],pages:[]}}); setNewRole(''); }}>
+                    <div className="input-group">
+                        <label>New Role Identifier</label>
+                        <input type="text" placeholder="e.g. data-analyst" value={newRole} onChange={e=>setNewRole(e.target.value)} required />
+                    </div>
+                    <button type="submit" className="btn btn-primary" style={{height:'44px'}}>Create Role Schema</button>
+                </form>
+            </div>
+
+            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(450px, 1fr))', gap:'1.5rem'}}>
+                {roles.map(role => {
+                    const p = cfg.roles[role];
+                    return (
+                        <div key={role} className="role-card">
+                            <div className="role-header">
+                                <h3><IconShield /> {role.toUpperCase()}</h3>
+                                {!['admin','user'].includes(role) && <button className="btn btn-danger btn-sm" onClick={()=>api(`/roles/${role}`,'DELETE')}>Drop Role</button>}
+                            </div>
+                            
+                            <SleekMultiSelect label="Allowed Projects" items={projectKeys} selected={p.projects||[]} onAdd={v => updateRole(role, 'projects', [...(p.projects||[]), v])} onRemove={v => updateRole(role, 'projects', (p.projects||[]).filter(x=>x!==v))} />
+                            <SleekMultiSelect label="Allowed Agents" items={['all', ...allAgentIds]} selected={p.agents||[]} onAdd={v => updateRole(role, 'agents', [...(p.agents||[]), v])} onRemove={v => updateRole(role, 'agents', (p.agents||[]).filter(x=>x!==v))} />
+                            <SleekMultiSelect label="Allowed Clients/Payers" items={['all', ...allClients]} selected={p.clients||[]} onAdd={v => updateRole(role, 'clients', [...(p.clients||[]), v])} onRemove={v => updateRole(role, 'clients', (p.clients||[]).filter(x=>x!==v))} />
+                            <SleekMultiSelect label="UI Tabs Scope" items={allPages} selected={p.pages||[]} onAdd={v => updateRole(role, 'pages', [...(p.pages||[]), v])} onRemove={v => updateRole(role, 'pages', (p.pages||[]).filter(x=>x!==v))} />
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+// ─── CATALOG TAB ────────────────────────────────────
+function CatalogTab({ catalog, api }) {
+    // Keeping simple for now, using row-forms
+    const [newClientProj, setNewClientProj] = useState('');
+    const [newClientAgent, setNewClientAgent] = useState('');
+    const [newClientName, setNewClientName] = useState('');
+    const pkeys = Object.keys(catalog.projects || {});
+
+    return (
+        <div className="panel">
+            <h2>Data Hierarchy Synchronization</h2>
+            <form className="row-form" onSubmit={e => { e.preventDefault(); api('/catalog/client','POST',{projectId:newClientProj,agentId:newClientAgent||undefined,clientName:newClientName}); setNewClientName(''); }}>
+                <div className="input-group">
+                    <label>Target Project</label>
+                    <select value={newClientProj} onChange={e=>{setNewClientProj(e.target.value);setNewClientAgent('');}} required>
+                        <option value="">Select Base Project...</option>
+                        {pkeys.map(p => <option key={p} value={p}>{catalog.projects[p].label || p}</option>)}
+                    </select>
+                </div>
+                <div className="input-group">
+                    <label>Agent Constraint (Optional)</label>
+                    <select value={newClientAgent} onChange={e=>setNewClientAgent(e.target.value)} disabled={!newClientProj}>
+                        <option value="">Inject at Project Level</option>
+                        {newClientProj && Object.entries(catalog.projects[newClientProj]?.agents||{}).map(([aid,a]) => <option key={aid} value={aid}>{a.label}</option>)}
+                    </select>
+                </div>
+                <div className="input-group">
+                    <label>Client / Payer Identity</label>
+                    <input placeholder="e.g. Aetna Medicare" value={newClientName} onChange={e=>setNewClientName(e.target.value)} required />
+                </div>
+                <button type="submit" className="btn btn-primary" style={{height:'44px'}}>Register Entity</button>
+            </form>
+            
+            <div style={{color:'var(--text-muted)', fontSize:'0.9rem', lineHeight:1.6, padding:'1rem', background:'rgba(0,0,0,0.2)', borderRadius:'12px', border:'1px dashed var(--border)'}}>
+                <strong>How the catalog sync works:</strong>
+                <p>Registering a new client/payer here dynamically injects it into the available drop-downs within the <strong>Roles Matrix</strong>. You do not need to restart the application or modify frontend codebase to assign permissions to entirely new customers or payers.</p>
+            </div>
+        </div>
+    );
+}
+
+// ─── AUDIT TAB ──────────────────────────────────────
+function AuditTab({ logs }) {
+    return (
+        <div className="panel">
+            <h2>System Audit History</h2>
+            <div className="table-container">
+                <table>
+                    <thead><tr><th>Timestamp</th><th>Administrator</th><th>Action</th><th>Details</th></tr></thead>
+                    <tbody>
+                        {logs.map((L, i) => (
+                            <tr key={i}>
+                                <td style={{whiteSpace:'nowrap', color:'var(--text-muted)'}}>{new Date(L.timestamp).toLocaleString()}</td>
+                                <td><span className="badge badge-neutral">{L.adminEmail}</span></td>
+                                <td><span className="badge badge-cyan">{L.action}</span></td>
+                                <td style={{fontSize:'0.85rem'}}>{L.details}</td>
+                            </tr>
+                        ))}
+                        {logs.length === 0 && <tr><td colSpan="4" className="empty-state">No audit logs available.</td></tr>}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<React.StrictMode><App /></React.StrictMode>);
+</script>
+</body>
+</html>

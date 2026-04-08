@@ -1,0 +1,5 @@
+agent|agent_id|icon|stage|version|type|date|highlights (semicolon-separated)|fixes (semicolon-separated)|asset
+CDPHP|cdphp|🏥|Live|1.0.0|major|13th Jan 2026|"Live in production for CDPHP eligibility automation (Shivani/Argha);End-to-end job completion consistently under 2 minutes from trigger to response"||
+CDPHP|cdphp|🏥|Live|0.0.1|minor|13th Jan 2026|"OTP automation: Fully automated OTP fetch via Gmail/IMAP service account;no human-in-the-loop required"||
+CDPHP|cdphp|🏥|Live|0.0.2|minor|13th Jan 2026|"Resilience: Comprehensive exception handling with structured logging across the workflow"||
+CDPHP|cdphp|🏥|Live|0.0.3|minor|13th Jan 2026|"Detection fallback: Multiple locator strategies (DOM selectors, CV/OCR/index-based) to recover when elements are not found"||

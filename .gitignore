@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor directories
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Cache
+.cache/
+
+# Secrets (service account keys, etc.)
+secrets/
+mlops-feature-dev_react@660c70449d5/api/routes/releases_cache.json
+mlops-feature-dev_react@660c70449d5/api/routes/optimix_cache.json
+mlflow-sa-prod.json
+vertex.ai/key_file.json
+mlflow-sa.jsom
+
+# Local worktrees and large local data files
+.claude/worktrees/
+GIA_Data_Analysis_New.csv

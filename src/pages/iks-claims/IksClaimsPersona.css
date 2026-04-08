@@ -1,0 +1,1114 @@
+/**
+ * IksClaimsPersona.css
+ * Styles for the IKS Claims persona switcher, Ops Manager extended sections,
+ * and Sr. Leader view. All classes use iks-persona-*, iks-ops-*, or iks-leader-* prefixes.
+ */
+
+/* ═══════════════════════════════════════════════════════════════
+   CALC BASIS TOGGLE (ITTT vs AR) — lives in OptimixIKSInsights.jsx
+═══════════════════════════════════════════════════════════════ */
+.iks-calc-basis-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 16px;
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 10px;
+    margin-bottom: 0;
+    flex-wrap: wrap;
+}
+
+.iks-calc-basis-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #818cf8;
+    white-space: nowrap;
+}
+
+.iks-calc-basis-switch {
+    display: flex;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+}
+
+.iks-calc-basis-switch button {
+    padding: 5px 14px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted, #9ca3af);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.iks-calc-basis-switch button:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
+}
+
+.iks-calc-basis-switch button.active {
+    background: #4f46e5;
+    color: #fff;
+    box-shadow: 0 1px 6px rgba(79, 70, 229, 0.5);
+}
+
+.iks-calc-basis-desc {
+    font-size: 11px;
+    color: var(--text-muted, #9ca3af);
+    font-style: italic;
+}
+
+[data-theme='light'] .iks-calc-basis-bar,
+.light-mode .iks-calc-basis-bar {
+    background: rgba(99, 102, 241, 0.04);
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+[data-theme='light'] .iks-calc-basis-switch,
+.light-mode .iks-calc-basis-switch {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .iks-calc-basis-switch button,
+.light-mode .iks-calc-basis-switch button {
+    color: #6b7280;
+}
+
+[data-theme='light'] .iks-calc-basis-switch button:hover,
+.light-mode .iks-calc-basis-switch button:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: #111;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PERSONA SWITCHER BAR
+═══════════════════════════════════════════════════════════════ */
+.iks-persona-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--card-bg, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    border-radius: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.iks-persona-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted, #9ca3af);
+    white-space: nowrap;
+}
+
+.iks-persona-switch {
+    display: flex;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+    flex-wrap: wrap;
+}
+
+.iks-persona-switch button {
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted, #9ca3af);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+    white-space: nowrap;
+}
+
+.iks-persona-switch button:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
+}
+
+.iks-persona-switch button.active {
+    background: #6366f1;
+    color: #fff;
+    box-shadow: 0 1px 6px rgba(99, 102, 241, 0.45);
+}
+
+.iks-persona-desc {
+    font-size: 11px;
+    color: var(--text-muted, #9ca3af);
+    font-style: italic;
+}
+
+/* Light mode overrides */
+:root[data-theme='light'] .iks-persona-bar,
+.light-mode .iks-persona-bar {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme='light'] .iks-persona-switch,
+.light-mode .iks-persona-switch {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme='light'] .iks-persona-switch button,
+.light-mode .iks-persona-switch button {
+    color: #6b7280;
+}
+
+:root[data-theme='light'] .iks-persona-switch button:hover,
+.light-mode .iks-persona-switch button:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: #111;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SHARED OPS / LEADER LAYOUT PRIMITIVES
+═══════════════════════════════════════════════════════════════ */
+
+.iks-ops-extended {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    margin-top: 24px;
+}
+
+.iks-ops-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.iks-ops-section-head h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text, #f1f5f9);
+    margin: 0 0 2px;
+}
+
+.iks-ops-section-head p {
+    font-size: 11px;
+    color: var(--text-muted, #9ca3af);
+    margin: 0;
+}
+
+/* Light mode text */
+:root[data-theme='light'] .iks-ops-section-head h3,
+.light-mode .iks-ops-section-head h3 {
+    color: #111827;
+}
+
+/* Chart card base */
+.iks-ops-chart-card {
+    background: var(--card-bg, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.iks-ops-chart-card h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text, #f1f5f9);
+    margin: 0;
+}
+
+.iks-ops-chart-sub {
+    font-size: 11px;
+    color: var(--text-muted, #9ca3af);
+    margin: 0;
+}
+
+.iks-ops-chart-wrap {
+    height: 220px;
+    margin-top: 8px;
+}
+
+:root[data-theme='light'] .iks-ops-chart-card,
+.light-mode .iks-ops-chart-card {
+    background: rgba(0, 0, 0, 0.025);
+    border-color: rgba(0, 0, 0, 0.09);
+}
+
+:root[data-theme='light'] .iks-ops-chart-card h4,
+.light-mode .iks-ops-chart-card h4 {
+    color: #111827;
+}
+
+/* Tooltip */
+.iks-ops-tooltip {
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #f1f5f9;
+}
+
+.iks-ops-tooltip-label {
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+/* Duo grid (2 equal columns) */
+.iks-ops-duo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+@media (max-width: 900px) {
+    .iks-ops-duo-grid { grid-template-columns: 1fr; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 1 — WORKABLE INVENTORY GRID
+═══════════════════════════════════════════════════════════════ */
+
+.iks-ops-inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+}
+
+.iks-ops-stat-card {
+    background: var(--card-bg, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.iks-ops-stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted, #9ca3af);
+}
+
+.iks-ops-stat-big {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text, #f1f5f9);
+    line-height: 1.1;
+}
+
+.iks-ops-stat-delta {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+:root[data-theme='light'] .iks-ops-stat-card,
+.light-mode .iks-ops-stat-card {
+    background: rgba(0, 0, 0, 0.025);
+    border-color: rgba(0, 0, 0, 0.09);
+}
+
+:root[data-theme='light'] .iks-ops-stat-big,
+.light-mode .iks-ops-stat-big {
+    color: #111827;
+}
+
+/* Mini spark bars in stat cards */
+.iks-ops-spark {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 28px;
+    margin-top: 8px;
+}
+
+.iks-ops-spark-bar {
+    flex: 1;
+    border-radius: 2px 2px 0 0;
+    min-height: 4px;
+    transition: height 0.3s;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 2 — RESOLUTION & TOUCH EFFICIENCY
+═══════════════════════════════════════════════════════════════ */
+
+.iks-ops-resolution-grid {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    gap: 12px;
+    align-items: start;
+}
+
+@media (max-width: 1100px) {
+    .iks-ops-resolution-grid { grid-template-columns: 1fr; }
+}
+
+.iks-ops-res-left,
+.iks-ops-res-right {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Horizontal bar rows */
+.iks-ops-hbar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.iks-ops-hbar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.iks-ops-hbar-label {
+    font-size: 11px;
+    color: var(--text-muted, #9ca3af);
+    width: 72px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.iks-ops-hbar-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    position: relative;
+    overflow: visible;
+}
+
+.iks-ops-hbar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+.iks-ops-hbar-benchmark {
+    position: absolute;
+    top: -4px;
+    width: 2px;
+    height: 16px;
+    background: #f59e0b;
+    border-radius: 1px;
+}
+
+.iks-ops-hbar-val {
+    font-size: 12px;
+    font-weight: 700;
+    width: 44px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.iks-ops-hbar-sub {
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--text-muted, #9ca3af);
+    margin-left: 4px;
+}
+
+:root[data-theme='light'] .iks-ops-hbar-track,
+.light-mode .iks-ops-hbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Lag heatmap */
+.iks-ops-lag-card {
+    height: 100%;
+}
+
+.iks-ops-lag-wrap {
+    overflow-x: auto;
+    margin-top: 8px;
+}
+
+.iks-ops-lag-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.iks-ops-lag-table th {
+    background: rgba(255, 255, 255, 0.04);
+    padding: 7px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted, #9ca3af);
+    text-transform: uppercase;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.iks-ops-lag-month {
+    padding: 7px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted, #9ca3af);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    white-space: nowrap;
+}
+
+.iks-ops-lag-cell {
+    padding: 8px 10px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 2px;
+}
+
+.iks-ops-lag-legend {
+    display: flex;
+    gap: 14px;
+    font-size: 10px;
+    margin-top: 8px;
+    opacity: 0.85;
+}
+
+:root[data-theme='light'] .iks-ops-lag-table th,
+.light-mode .iks-ops-lag-table th {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #6b7280;
+}
+
+:root[data-theme='light'] .iks-ops-lag-month,
+.light-mode .iks-ops-lag-month {
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #6b7280;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 3 — AR EFFICIENCY (BLOCKED)
+═══════════════════════════════════════════════════════════════ */
+
+.iks-ops-blocked-banner {
+    background: rgba(245, 158, 11, 0.06);
+    border: 1px dashed rgba(245, 158, 11, 0.35);
+    border-radius: 10px;
+    padding: 16px 20px;
+    opacity: 0.85;
+}
+
+.iks-ops-blocked-banner strong {
+    font-size: 13px;
+    color: #f59e0b;
+}
+
+.iks-ops-blocked-banner p {
+    font-size: 11px;
+    color: var(--text-muted, #9ca3af);
+    margin: 6px 0 12px;
+}
+
+.iks-ops-efficiency-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+@media (max-width: 700px) {
+    .iks-ops-efficiency-grid { grid-template-columns: 1fr; }
+}
+
+.iks-ops-eff-box {
+    background: var(--card-bg, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+
+.iks-ops-eff-amber { border-color: rgba(245, 158, 11, 0.3); }
+.iks-ops-eff-blocked { opacity: 0.55; border-style: dashed; }
+
+.iks-ops-eff-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #9ca3af);
+    margin-bottom: 6px;
+}
+
+.iks-ops-eff-val {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f59e0b;
+    letter-spacing: -0.01em;
+}
+
+.iks-ops-eff-note {
+    font-size: 10px;
+    color: var(--text-muted, #9ca3af);
+    margin-top: 4px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 7 — CASH IMPACT
+═══════════════════════════════════════════════════════════════ */
+
+.iks-ops-cash-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 12px;
+}
+
+.iks-ops-cash-grid--single {
+    grid-template-columns: 1fr;
+}
+
+@media (max-width: 900px) {
+    .iks-ops-cash-grid { grid-template-columns: 1fr; }
+}
+
+.iks-ops-cash-hero {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+    min-height: 180px;
+}
+
+.iks-ops-cash-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted, #9ca3af);
+}
+
+.iks-ops-cash-value {
+    font-size: 44px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+.iks-ops-cash-sub {
+    font-size: 10px;
+    color: var(--text-muted, #9ca3af);
+    max-width: 200px;
+    margin: 0 auto;
+}
+
+.iks-ops-rag-chips {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    font-size: 10px;
+    margin-top: 4px;
+}
+
+.iks-ops-assoc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.iks-ops-assoc-header h4 {
+    margin: 0;
+}
+
+.iks-ops-manager-badge {
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 20px;
+    padding: 2px 10px;
+    white-space: nowrap;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SR. LEADER VIEW
+═══════════════════════════════════════════════════════════════ */
+
+.iks-leader-view {
+    margin-top: 0;
+}
+
+/* Hero grid — 2 equal columns */
+.iks-leader-hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+@media (max-width: 700px) {
+    .iks-leader-hero-grid { grid-template-columns: 1fr; }
+}
+
+.iks-leader-hero-card {
+    background: var(--card-bg, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+:root[data-theme='light'] .iks-leader-hero-card,
+.light-mode .iks-leader-hero-card {
+    background: rgba(0, 0, 0, 0.025);
+    border-color: rgba(0, 0, 0, 0.09);
+}
+
+.iks-leader-hero-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted, #9ca3af);
+}
+
+.iks-leader-hero-value {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1;
+}
+
+.iks-leader-hero-target {
+    font-size: 11px;
+    color: var(--text-muted, #9ca3af);
+}
+
+.iks-leader-hero-sub {
+    font-size: 10px;
+    color: var(--text-muted, #9ca3af);
+    margin-top: 4px;
+}
+
+/* Progress bar */
+.iks-leader-progress-track {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 2px;
+    position: relative;
+}
+
+.iks-leader-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+:root[data-theme='light'] .iks-leader-progress-track,
+.light-mode .iks-leader-progress-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Spark bars in hero cards */
+.iks-leader-spark {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 32px;
+    margin-top: 8px;
+}
+
+.iks-leader-spark-bar {
+    flex: 1;
+    border-radius: 2px 2px 0 0;
+    min-height: 4px;
+    transition: height 0.3s;
+}
+
+/* Model Trust grid — 3 columns */
+.iks-leader-trust-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 700px) {
+    .iks-leader-trust-grid { grid-template-columns: 1fr; }
+}
+
+.iks-leader-donut-card {
+    background: var(--card-bg, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+}
+
+:root[data-theme='light'] .iks-leader-donut-card,
+.light-mode .iks-leader-donut-card {
+    background: rgba(0, 0, 0, 0.025);
+    border-color: rgba(0, 0, 0, 0.09);
+}
+
+.iks-leader-donut-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted, #9ca3af);
+    margin-bottom: 4px;
+}
+
+.iks-leader-donut-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.iks-leader-donut-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    pointer-events: none;
+}
+
+.iks-leader-donut-sub {
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* Bias card inner layout */
+.iks-leader-bias-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    gap: 8px;
+}
+
+.iks-leader-bias-value {
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.iks-leader-bias-label {
+    font-size: 11px;
+    color: var(--text-muted, #9ca3af);
+}
+
+/* Financial health grid — 1fr + 2fr */
+.iks-leader-finance-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 12px;
+}
+
+@media (max-width: 900px) {
+    .iks-leader-finance-grid { grid-template-columns: 1fr; }
+}
+
+.iks-leader-cash-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+    min-height: 180px;
+}
+
+.iks-leader-cash-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted, #9ca3af);
+}
+
+.iks-leader-cash-value {
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1;
+}
+
+.iks-leader-cash-target {
+    font-size: 11px;
+    color: var(--text-muted, #9ca3af);
+}
+
+.iks-leader-cash-pct {
+    font-size: 13px;
+    font-weight: 600;
+    color: #10b981;
+}
+
+/* Risk exposure section */
+.iks-leader-risk-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+}
+
+@media (max-width: 700px) {
+    .iks-leader-risk-stats { grid-template-columns: 1fr; }
+}
+
+.iks-leader-risk-card {
+    background: var(--card-bg, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    border-radius: 10px;
+    padding: 16px;
+    position: relative;
+}
+
+.iks-leader-risk-total {
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+:root[data-theme='light'] .iks-leader-risk-card,
+.light-mode .iks-leader-risk-card {
+    background: rgba(0, 0, 0, 0.025);
+    border-color: rgba(0, 0, 0, 0.09);
+}
+
+.iks-leader-risk-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted, #9ca3af);
+    margin-bottom: 6px;
+}
+
+.iks-leader-risk-value {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.iks-leader-risk-sub {
+    font-size: 10px;
+    color: var(--text-muted, #9ca3af);
+    margin-top: 4px;
+}
+
+.iks-leader-risk-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 20px;
+    padding: 2px 8px;
+}
+
+/* Sr. Leader context bar — shows selected month / phase */
+.iks-leader-context-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 8px;
+    font-size: 11px;
+    flex-wrap: wrap;
+}
+
+.iks-leader-context-label {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #818cf8;
+}
+
+.iks-leader-context-value {
+    font-weight: 600;
+    color: var(--text, #f1f5f9);
+}
+
+:root[data-theme='light'] .iks-leader-context-value,
+.light-mode .iks-leader-context-value {
+    color: #1e293b;
+}
+
+/* Live / Mock data source badge next to section heading */
+.iks-ops-source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 10px;
+    vertical-align: middle;
+    letter-spacing: 0.04em;
+}
+
+.iks-ops-source-live {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.iks-ops-source-mock {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.iks-ops-source-loading {
+    background: rgba(156, 163, 175, 0.1);
+    color: #9ca3af;
+    border: 1px solid rgba(156, 163, 175, 0.2);
+}
+
+/* Inventory card tooltip icon */
+.iks-ops-stat-tip {
+    font-size: 10px;
+    color: var(--text-muted, #9ca3af);
+    margin-left: 4px;
+    cursor: help;
+    opacity: 0.7;
+    vertical-align: middle;
+}
+
+.iks-ops-stat-tip:hover {
+    opacity: 1;
+}
+
+/* Prediction Bias rates breakdown */
+.iks-leader-bias-rates {
+    display: flex;
+    gap: 10px;
+    font-size: 10px;
+    color: var(--text-muted, #9ca3af);
+    margin-top: 4px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 2 — CHART LEGEND ROW & TOUCH DISTRIBUTION DONUT
+═══════════════════════════════════════════════════════════════ */
+
+.iks-ops-chart-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: var(--text-muted, #9ca3af);
+    margin-top: 4px;
+}
+
+.iks-ops-legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+/* Touch card layout: donut on left, legend list on right */
+.iks-ops-touch-card {
+    /* inherits .iks-ops-chart-card */
+}
+
+.iks-ops-touch-layout {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.iks-ops-touch-donut {
+    flex-shrink: 0;
+}
+
+.iks-ops-touch-legend {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.iks-ops-touch-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.iks-ops-touch-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.iks-ops-touch-lbl {
+    flex: 1;
+    color: var(--text-muted, #9ca3af);
+    font-size: 11px;
+}
+
+.iks-ops-touch-pct {
+    font-weight: 700;
+    font-size: 13px;
+    min-width: 36px;
+    text-align: right;
+}
+
+.iks-ops-touch-flag {
+    font-size: 10px;
+    color: #ef4444;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Light mode overrides for new elements */
+:root[data-theme='light'] .iks-ops-chart-legend-row,
+.light-mode .iks-ops-chart-legend-row {
+    color: #6b7280;
+}
+
+:root[data-theme='light'] .iks-ops-touch-lbl,
+.light-mode .iks-ops-touch-lbl {
+    color: #6b7280;
+}

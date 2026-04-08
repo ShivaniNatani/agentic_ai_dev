@@ -1,0 +1,535 @@
+{
+  "releaseNotes": [
+    {
+      "agent": "Appeal",
+      "agentId": "appeal",
+      "icon": "\u2696\ufe0f",
+      "stage": "Live",
+      "releases": [
+        {
+          "version": "Deployed in PROD",
+          "date": "2025-01-13",
+          "type": "major",
+          "highlights": [
+            "V1.0"
+          ],
+          "fixes": [],
+          "asset": null
+        }
+      ]
+    },
+    {
+      "agent": "Browser Agent",
+      "agentId": "browser-agent",
+      "icon": "\ud83e\udded",
+      "stage": "In progress",
+      "releases": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-13",
+          "type": "minor",
+          "highlights": [
+            "Ops testing in progress",
+            "Agent issue to be fixed ( the ai agent is unable to click on the \u2018Diagnostics Imaging\u2019 card on the portal. It says that it\u2019s disabled. Since, we run the agents in a headless mode, we actually couldn\u2019t see if that is the case. So, Bala manually logged into the portal and verified that the card is enabled for that case)"
+          ],
+          "fixes": [],
+          "asset": null
+        }
+      ]
+    },
+    {
+      "agent": "CDPHP",
+      "agentId": "cdphp",
+      "icon": "\ud83c\udfe5",
+      "stage": "In progress",
+      "releases": [
+        {
+          "version": "v1.0.1",
+          "date": "2026-01-13",
+          "type": "minor",
+          "highlights": [
+            "Turnaround",
+            "End-to-end job completion consistently under 2 minutes (trigger \u2192 login \u2192 extraction \u2192 response)."
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "LIve in Prod",
+          "date": "2026-01-13",
+          "type": "major",
+          "highlights": [
+            "End-to-end job completion consistently under 2 minutes (trigger \u2192 login \u2192 extraction \u2192 response)."
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.1",
+          "date": "2026-01-13",
+          "type": "minor",
+          "highlights": [
+            "OTP",
+            "Fully automated OTP fetch via Gmail/IMAP service account; no human-in-the-loop required."
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.1",
+          "date": "2026-01-13",
+          "type": "minor",
+          "highlights": [
+            "Resilience",
+            ": Comprehensive exception handling with structured logging across the workflow."
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.1",
+          "date": "2026-01-13",
+          "type": "minor",
+          "highlights": [
+            "Detection fallback",
+            "Multiple locator strategies (DOM selectors, CV/OCR/index-based) to recover when elements aren\u2019t found."
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.1",
+          "date": "2026-01-13",
+          "type": "minor",
+          "highlights": [
+            "Stability",
+            "Automatic waits for patient load and network idle to avoid premature interactions."
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.1",
+          "date": "2026-01-13",
+          "type": "minor",
+          "highlights": [
+            "Cost efficiency",
+            "Zero external API (Gemini) cost in this workflow."
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.1",
+          "date": "2026-01-13",
+          "type": "minor",
+          "highlights": [
+            "Benefits/coverage, claims, personal info parsing tightened",
+            "specialist/primary care extraction more resilient."
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.1",
+          "date": "2026-01-13",
+          "type": "minor",
+          "highlights": [
+            "Outputs & Formatting: API supports pretty JSON (?pretty=true)",
+            "saved outputs consistently formatted."
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.1",
+          "date": "2026-01-13",
+          "type": "minor",
+          "highlights": [
+            "Stability",
+            "Healthcheck retained; retries/timeouts tuned; headless Playwright enforced to avoid X server errors."
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.1",
+          "date": "2026-01-13",
+          "type": "minor",
+          "highlights": [
+            "Tests/Validation",
+            "End-to-end runs validated (e.g., CD1495249-00) with consistent plan/eligibility, group captured, and full workflow success (~80\u201390s per patient)."
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.2",
+          "date": "2026-01-13",
+          "type": "minor",
+          "highlights": [
+            "PDF upload"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.2",
+          "date": "2026-01-13",
+          "type": "major",
+          "highlights": [
+            "V2"
+          ],
+          "fixes": [],
+          "asset": null
+        }
+      ]
+    },
+    {
+      "agent": "OrthoNY Writebacks",
+      "agentId": "orthony-writebacks",
+      "icon": "\ud83d\ude80",
+      "stage": "In progress",
+      "releases": [
+        {
+          "version": "1.0.0",
+          "date": "2025-03-11 00:00:00",
+          "type": "minor",
+          "highlights": [
+            "Initial Pharmacy writeback",
+            "End to end pharmacy writeback in ONY modmed"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "1.0.0",
+          "date": "2025-03-11 00:00:00",
+          "type": "major",
+          "highlights": [
+            "v1.0",
+            "End to end pharmacy writeback in ONY modmed"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "1.0.0",
+          "date": "2025-03-11 00:00:00",
+          "type": "minor",
+          "highlights": [
+            "Log Analysis ,PCP Agent & Smarter AI",
+            "Added features in Orthony pharmacy writeback like log analysis and storing the result and payload into the bucket which will help OPs members to track the status of Agent write back for particular patient. And a smarter AI which will extract patient data and match even if the payload are not as expected . Also added another agent which will now writeback the primary care provider input"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "1.0.0",
+          "date": "2025-03-11 00:00:00",
+          "type": "major",
+          "highlights": [
+            "v2.0",
+            "Added features in Orthony pharmacy writeback like log analysis and storing the result and payload into the bucket which will help OPs members to track the status of Agent write back for particular patient. And a smarter AI which will extract patient data and match even if the payload are not as expected . Also added another agent which will now writeback the primary care provider input"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v2.1",
+          "date": "2025-03-11 00:00:00",
+          "type": "minor",
+          "highlights": [
+            "Pop-Up Handling,Removal of Mismatched Pharmacies,Detailed Logging",
+            "Popup closing and deleting of unwanrted pharmacy"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v2.1.1",
+          "date": "2025-03-11 00:00:00",
+          "type": "minor",
+          "highlights": [
+            "Workers Compensation Agent",
+            "Workers compensation agent"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v 2.1.1",
+          "date": "2025-03-11 00:00:00",
+          "type": "minor",
+          "highlights": [
+            "Auto Insurance Agent,Cache logging , Cost Optimisation",
+            "Workers compensation writeback in modmed"
+          ],
+          "fixes": [],
+          "asset": null
+        }
+      ]
+    },
+    {
+      "agent": "OrthoNY-EVE Notes",
+      "agentId": "orthony-eve-notes",
+      "icon": "\ud83d\ude80",
+      "stage": "In progress",
+      "releases": [
+        {
+          "version": "1.0.0",
+          "date": "26/01/26",
+          "type": "minor",
+          "highlights": [
+            "Noteswriteback with PDF attached"
+          ],
+          "fixes": [],
+          "asset": null
+        }
+      ]
+    },
+    {
+      "agent": "PA",
+      "agentId": "pa",
+      "icon": "\ud83d\udea6",
+      "stage": "In progress",
+      "releases": [
+        {
+          "version": "v1.0",
+          "date": "2025-01-13",
+          "type": "minor",
+          "highlights": [
+            "Development for payer Wellpoint",
+            "Under testing. Development completed"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "dev deployed",
+          "date": "2025-01-13",
+          "type": "major",
+          "highlights": [
+            "Under testing. Development completed"
+          ],
+          "fixes": [],
+          "asset": null
+        }
+      ]
+    },
+    {
+      "agent": "PKB",
+      "agentId": "pkb",
+      "icon": "\ud83d\udcd8",
+      "stage": "In progress",
+      "releases": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-13",
+          "type": "minor",
+          "highlights": [
+            "PKB 3.0 version deployed ready for demo",
+            "Following changes mentioned are complete and deployed as per prd",
+            "Scheduler",
+            "Auto download of policy",
+            "HITL Source of Policy Review",
+            "Auto Extraction of Data",
+            "Autonomous + HITL Comparison of Policies",
+            "Integration with EVE (Using a payload mentioned in prd)"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "1.0.0",
+          "date": "2025-01-13",
+          "type": "major",
+          "highlights": [
+            "v3.0",
+            "Following changes mentioned are complete and deployed as per prd",
+            "Scheduler",
+            "Auto download of policy",
+            "HITL Source of Policy Review",
+            "Auto Extraction of Data",
+            "Autonomous + HITL Comparison of Policies",
+            "Integration with EVE (Using a payload mentioned in prd)"
+          ],
+          "fixes": [],
+          "asset": null
+        }
+      ]
+    },
+    {
+      "agent": "Recommended Next Best Action",
+      "agentId": "recommended-next-best-action",
+      "icon": "\ud83e\udd16",
+      "stage": "In progress",
+      "releases": [
+        {
+          "version": "v1.0.4",
+          "date": "2026-01-20",
+          "type": "minor",
+          "highlights": [
+            "AI-Powered Intent Detection",
+            "Document Upload and Summarization Support (PDF, DOCX)",
+            "Intelligent medical code recognition (CPT/HCPCS)",
+            "Context-aware query handling (document vs patient vs encounter)",
+            "Session-based document isolation with ChromaDB embeddings",
+            "Fixed false patient ID extraction from medical codes (G0151, J1234, etc.)",
+            "Fixed ChromaDB metadata validation error (nested dict flattening)",
+            "Fixed session ID persistence across chat interactions",
+            "Fixed UI response display delay",
+            "Fixed denial code formatting (CO-22 instead of 22-N/A)",
+            "Fixed intent detection priority (encounter > patient > document > general)",
+            "Replaced brittle regex patterns with LLM semantic analysis",
+            "Added fallback mechanism for robust error handling",
+            "Implemented background document embedding for performance",
+            "Automatic directory creation for fresh starts",
+            "Enhanced logging for debugging and monitoring",
+            "PHI masking and sanitization preserved",
+            "Session isolation maintained",
+            "Multi-layer security (frontend, backend, API) intact"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.3",
+          "date": "2026-01-16",
+          "type": "minor",
+          "highlights": [
+            "Chat Feature",
+            "**Context Retrieval**: Automatically fetches relevant data from vector database",
+            "**Conversation Memory**: Remembers previous messages in the session",
+            "**Smart Responses**: Natural, conversational answers (not rigid structured output)",
+            "**Multi-Query Support**:",
+            "Encounter-specific questions",
+            "Patient history inquiries",
+            "CARC/RARC code explanations",
+            "General denial management questions",
+            "Follow-up questions using conversation context"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.3",
+          "date": "2026-01-16",
+          "type": "major",
+          "highlights": [
+            "v1",
+            "**Context Retrieval**: Automatically fetches relevant data from vector database",
+            "**Conversation Memory**: Remembers previous messages in the session",
+            "**Smart Responses**: Natural, conversational answers (not rigid structured output)",
+            "**Multi-Query Support**:",
+            "Encounter-specific questions",
+            "Patient history inquiries",
+            "CARC/RARC code explanations",
+            "General denial management questions",
+            "Follow-up questions using conversation context"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.2",
+          "date": "2026-01-16",
+          "type": "minor",
+          "highlights": [
+            "Optimix data ingestion",
+            "Embeddings of below data points from optimix",
+            "Complete claim lifecycle tracking data",
+            "CARC/RARC code",
+            "AR Activity"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0.1",
+          "date": "2026-01-16",
+          "type": "minor",
+          "highlights": [
+            "Gen AI based recommendation engine for claim denial",
+            "system for analyzing medical claim denials using RAG (Retrieval-Augmented Generation) technology. The system combines historical denial data (1.25M+ cases) with Google's Gemini 2.5 Pro AI model to provide intelligent recommendations for healthcare revenue cycle management."
+          ],
+          "fixes": [],
+          "asset": null
+        }
+      ]
+    },
+    {
+      "agent": "Referral",
+      "agentId": "referral",
+      "icon": "\ud83d\udcdd",
+      "stage": "In progress",
+      "releases": [
+        {
+          "version": "v.1.0",
+          "date": "2025-01-13",
+          "type": "minor",
+          "highlights": [
+            "Development completed for different payers like BCBS of\n AZ ,BCBS of IL , premera ,wellcare.",
+            "Development of agent completed .Testing is in progress."
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "dev deployed",
+          "date": "2025-01-13",
+          "type": "major",
+          "highlights": [
+            "Development of agent completed .Testing is in progress."
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "v1.0",
+          "date": "2025-01-13",
+          "type": "minor",
+          "highlights": [
+            "Development completed for different payers like RegenceBCBS of Utah",
+            "Under testing. Development completed"
+          ],
+          "fixes": [],
+          "asset": null
+        },
+        {
+          "version": "dev deployed",
+          "date": "2025-01-13",
+          "type": "major",
+          "highlights": [
+            "Under testing. Development completed"
+          ],
+          "fixes": [],
+          "asset": null
+        }
+      ]
+    },
+    {
+      "agent": "Wissen",
+      "agentId": "wissen",
+      "icon": "\ud83d\ude80",
+      "stage": "In progress",
+      "releases": [
+        {
+          "version": "v1.0",
+          "date": "2025-01-13",
+          "type": "minor",
+          "highlights": [
+            "\"Wissen team for fixing bugs that is informed\nn8n workflow -- resolved by Wissen\n\napplication.config needs credentials (eg. service account)\nNeed to be updated by IKS server team. \nIKS tem is currently using dummy credentials\"",
+            "Wissen team for fixing bugs that is informed",
+            "n8n workflow -- resolved by Wissen",
+            "application.config needs credentials (eg. service account)",
+            "Need to be updated by IKS server team.",
+            "IKS tem is currently using dummy credentials"
+          ],
+          "fixes": [],
+          "asset": null
+        }
+      ]
+    }
+  ]
+}

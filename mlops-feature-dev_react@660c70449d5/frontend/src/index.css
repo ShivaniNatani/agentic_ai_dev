@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-dark-900 text-slate-100 font-sans antialiased;
+        background:
+            radial-gradient(circle at 20% 20%, rgba(206, 17, 38, 0.18), transparent 28%),
+            radial-gradient(circle at 80% 10%, rgba(245, 183, 0, 0.12), transparent 24%),
+            linear-gradient(135deg, #0a0a0d 0%, #0f1015 50%, #0a0a0d 100%);
+        min-height: 100vh;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 42px 42px;
+        pointer-events: none;
+        opacity: 0.25;
+        z-index: 0;
+    }
+}
+
+@layer components {
+    .glass-card {
+        @apply bg-gradient-glass backdrop-blur-glass border border-white/10 rounded-xl shadow-glass;
+    }
+
+    .btn-primary {
+        @apply px-5 py-3 bg-gradient-primary text-white font-semibold rounded-lg shadow-glow hover:-translate-y-[1px] transition-all;
+    }
+
+    .gradient-text {
+        @apply bg-gradient-primary bg-clip-text text-transparent font-bold;
+    }
+
+    .input {
+        @apply w-full px-3 py-2 rounded-lg bg-dark-850 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40;
+    }
+
+    .card-outline {
+        @apply border border-white/10 rounded-xl bg-dark-850/90 backdrop-blur-xl shadow-glass;
+    }
+
+    .badge {
+        @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.2em];
+    }
+
+    .pill {
+        @apply px-3 py-1 rounded-full text-xs font-semibold border border-white/10 bg-dark-750 text-slate-200;
+    }
+}
