@@ -15,8 +15,10 @@ import logging
 import os
 import time
 import calendar
+import re
 
 import pandas as pd
+import math
 from flask import Blueprint, jsonify, request
 from google.cloud import bigquery
 from google.auth.transport.requests import AuthorizedSession, Request as GoogleAuthRequest
@@ -34,6 +36,9 @@ optimix_iks_bp = Blueprint("optimix_iks", __name__, url_prefix="/api/optimix/iks
 _NPNR_PAYER_WHITELIST: set = set()
 _NPNR_PAYER_SQL_IN: str = ""
 _NPNR_OPTIMIX_TO_AVAILITY: dict = {}  # optimix_payer_name → availity_payer_name
+_NPNR_PAYER_WHITELIST_NORMALIZED: dict = {}
+_NPNR_OPTIMIX_TO_AVAILITY_NORMALIZED: dict = {}
+_NPNR_PARENT_PAYER_NORMALIZED: dict = {}
 try:
     _wl_path = Path(__file__).resolve().parent / "npnr_payer_whitelist.json"
     if _wl_path.exists():
@@ -46,6 +51,21 @@ try:
         else:
             _wl_list = _wl_data  # legacy: plain array
         _NPNR_PAYER_WHITELIST = set(_wl_list)
+        _NPNR_PAYER_WHITELIST_NORMALIZED = {
+            re.sub(r"\s+", " ", str(p or "").strip().upper()): p
+            for p in _wl_list
+            if str(p or "").strip()
+        }
+        _NPNR_OPTIMIX_TO_AVAILITY_NORMALIZED = {
+            re.sub(r"\s+", " ", str(k or "").strip().upper()): v
+            for k, v in _NPNR_OPTIMIX_TO_AVAILITY.items()
+            if str(k or "").strip()
+        }
+        _NPNR_PARENT_PAYER_NORMALIZED = {
+            re.sub(r"\s+", " ", str(v or "").strip().upper()): str(v or "").strip()
+            for v in _NPNR_OPTIMIX_TO_AVAILITY.values()
+            if str(v or "").strip()
+        }
         _NPNR_PAYER_SQL_IN = ", ".join(
             "'" + p.replace("'", "''") + "'" for p in _wl_list
         )
@@ -67,6 +87,10 @@ DATA_GID = os.getenv("OPTIMIX_IKS_DATA_GID", "179646467")
 # AR Workable Backlog
 AR_WORKFLOW_TABLE = os.getenv("AR_WORKFLOW_TABLE", "iksgcp.iks_dwh_gia.main_ar_workflow")
 AR_CREDS_PATH = os.getenv("AR_CREDS_PATH", "/app/secrets/mlflow-sa-prod.json")
+DATE_PHASE_ANALYTICS_TABLE = os.getenv(
+    "OPTIMIX_IKS_DATE_PHASE_TABLE",
+    "iksgcp.iks_dwh_gia.date_phase_analytics_v2",
+)
 
 # ─── Model Accuracy BQ tables (prod project) ───────────────────────
 # These are used ONLY for the KPI card accuracy_pct values.
@@ -90,11 +114,20 @@ PHASE_SUFFIX_MAP = {
 }
 PHASE_TO_SUFFIX_MAP = {phase: suffix for suffix, phase in PHASE_SUFFIX_MAP.items()}
 ALL_PHASES = ["Phase 1", "Phase 2", "Phase 5", "Phase 6", "Phase 8", "Phase 9"]
+DATE_PHASE_PHASE_MAP = {
+    "Phase 1": "Phase1",
+    "Phase 2": "Phase2",
+    "Phase 5": "Phase5",
+    "Phase 6": "Phase6",
+    "Phase 8": "Phase8",
+    "Phase 9": "Phase9",
+}
 
 # Forecast horizon: complete 12 months based on trailing 45-day behavior.
 FORECAST_LOOKBACK_DAYS = max(int(os.getenv("OPTIMIX_IKS_FORECAST_LOOKBACK_DAYS", "45")), 7)
 FORECAST_MONTHS = max(int(os.getenv("OPTIMIX_IKS_FORECAST_MONTHS", "3")), 1)
 FORECAST_YEAR_OVERRIDE = os.getenv("OPTIMIX_IKS_FORECAST_YEAR")
+WORKPLAN_LOOKBACK_DAYS = max(int(os.getenv("OPTIMIX_IKS_WORKPLAN_LOOKBACK_DAYS", "45")), 1)
 
 # Cache config
 CACHE_FILE = Path(__file__).parent / "optimix_iks_cache.json"
@@ -239,10 +272,317 @@ def _shift_month_key(month_key: str, offset: int) -> str:
     return f"{shifted_year:04d}-{shifted_month_index + 1:02d}"
 
 
+def _date_phase_phase_name(phase: Optional[str]) -> Optional[str]:
+    if not phase:
+        return None
+    return DATE_PHASE_PHASE_MAP.get(phase)
+
+
+def _fetch_date_phase_workplan_metrics(
+    client: bigquery.Client,
+    phase: Optional[str],
+    month: Optional[str],
+    granularity: str,
+) -> Optional[Dict[str, Any]]:
+    normalized_phase = _date_phase_phase_name(phase)
+    phase_filter = f"AND phase = '{normalized_phase}'" if normalized_phase else ""
+    month_filter = ""
+    if month:
+        month_start, month_end = _month_bounds(month)
+        month_filter = f"AND ITTT_Date BETWEEN DATE '{month_start}' AND DATE '{month_end}'"
+
+    period_expr = (
+        "ITTT_Date"
+        if granularity == "day"
+        else "DATE_TRUNC(ITTT_Date, WEEK(MONDAY))"
+        if granularity == "week"
+        else "DATE_TRUNC(ITTT_Date, MONTH)"
+        if granularity == "month"
+        else "DATE_TRUNC(ITTT_Date, QUARTER)"
+        if granularity == "quarter"
+        else "DATE_TRUNC(ITTT_Date, YEAR)"
+    )
+
+    summary_sql = f"""
+        WITH filtered AS (
+            SELECT
+                ITTT_Date,
+                Total_Inventory,
+                Workable_Inventory,
+                Total_NPNR,
+                Total_Denials,
+                AR_Backlog,
+                Pending_Payer_In_Transit,
+                Resolved_Paid_MTD,
+                action_rate_total_workable,
+                action_rate_total_touched,
+                action_rate_percent,
+                avg_aging_risk,
+                denial_overturn_rate,
+                Predicted_Payment_Rate,
+                Actual_Payment_Rate,
+                Prediction_Bias
+            FROM `{DATE_PHASE_ANALYTICS_TABLE}`
+            WHERE 1=1
+              {phase_filter}
+              {month_filter}
+        ),
+        latest AS (
+            SELECT MAX(ITTT_Date) AS as_of_date
+            FROM filtered
+        )
+        SELECT
+            latest.as_of_date AS as_of_date,
+            SUM(filtered.Total_Inventory) AS total_inventory,
+            SUM(filtered.Workable_Inventory) AS workable_inventory,
+            SUM(filtered.Total_NPNR) AS total_npnr,
+            SUM(filtered.Total_Denials) AS total_denials,
+            ROUND(SUM(CAST(filtered.AR_Backlog AS FLOAT64)), 2) AS ar_backlog,
+            SUM(filtered.Pending_Payer_In_Transit) AS pending_payer_in_transit,
+            SUM(filtered.Resolved_Paid_MTD) AS resolved_paid_mtd,
+            SUM(filtered.action_rate_total_workable) AS action_rate_total_workable,
+            SUM(filtered.action_rate_total_touched) AS action_rate_total_touched,
+            ROUND(
+                SAFE_DIVIDE(
+                    SUM(filtered.action_rate_total_touched),
+                    NULLIF(SUM(filtered.action_rate_total_workable), 0)
+                ) * 100,
+                2
+            ) AS action_rate_percent,
+            ROUND(AVG(CAST(filtered.avg_aging_risk AS FLOAT64)), 2) AS avg_aging_risk,
+            ROUND(AVG(CAST(filtered.denial_overturn_rate AS FLOAT64)), 2) AS denial_overturn_rate,
+            ROUND(AVG(CAST(filtered.Predicted_Payment_Rate AS FLOAT64)), 2) AS predicted_payment_rate,
+            ROUND(AVG(CAST(filtered.Actual_Payment_Rate AS FLOAT64)), 2) AS actual_payment_rate,
+            ROUND(AVG(CAST(filtered.Prediction_Bias AS FLOAT64)), 2) AS prediction_bias
+        FROM filtered
+        JOIN latest
+          ON filtered.ITTT_Date = latest.as_of_date
+        GROUP BY latest.as_of_date
+    """
+    summary_rows = list(client.query(summary_sql).result())
+    if not summary_rows:
+        return None
+
+    summary_row = summary_rows[0]
+    if getattr(summary_row, "as_of_date", None) is None:
+        return None
+
+    trend_sql = f"""
+        SELECT
+            {period_expr} AS period,
+            SUM(Total_Inventory) AS total_inventory,
+            SUM(Workable_Inventory) AS workable_inventory,
+            SUM(Total_Denials) AS total_denials,
+            SUM(Total_NPNR) AS total_npnr,
+            SUM(Pending_Payer_In_Transit) AS pending_payer_in_transit,
+            ROUND(SUM(CAST(AR_Backlog AS FLOAT64)), 2) AS ar_backlog,
+            SUM(action_rate_total_workable) AS action_rate_total_workable,
+            SUM(action_rate_total_touched) AS action_rate_total_touched,
+            ROUND(
+                SAFE_DIVIDE(SUM(action_rate_total_touched), NULLIF(SUM(action_rate_total_workable), 0)) * 100,
+                2
+            ) AS action_rate_percent
+        FROM `{DATE_PHASE_ANALYTICS_TABLE}`
+        WHERE 1=1
+          {phase_filter}
+          {month_filter}
+        GROUP BY period
+        ORDER BY period
+    """
+    trend_rows = list(client.query(trend_sql).result())
+    trend = [
+        {
+            "period": str(row.period),
+            "count": int(row.workable_inventory or 0),
+            "balance": float(row.ar_backlog or 0),
+            "total_inventory": int(row.total_inventory or 0),
+            "total_denials": int(row.total_denials or 0),
+            "total_npnr": int(row.total_npnr or 0),
+            "pending_payer_in_transit": int(row.pending_payer_in_transit or 0),
+            "action_rate_total_workable": int(row.action_rate_total_workable or 0),
+            "action_rate_total_touched": int(row.action_rate_total_touched or 0),
+            "action_rate_percent": float(row.action_rate_percent or 0),
+        }
+        for row in trend_rows
+    ]
+
+    return {
+        "source": DATE_PHASE_ANALYTICS_TABLE,
+        "as_of_date": str(summary_row.as_of_date),
+        "summary": {
+            "total_inventory": int(summary_row.total_inventory or 0),
+            "workable_inventory": int(summary_row.workable_inventory or 0),
+            "total_npnr": int(summary_row.total_npnr or 0),
+            "total_denials": int(summary_row.total_denials or 0),
+            "ar_backlog": round(float(summary_row.ar_backlog or 0), 2),
+            "pending_payer_in_transit": int(summary_row.pending_payer_in_transit or 0),
+            "resolved_paid_mtd": int(summary_row.resolved_paid_mtd or 0),
+            "action_rate_total_workable": int(summary_row.action_rate_total_workable or 0),
+            "action_rate_total_touched": int(summary_row.action_rate_total_touched or 0),
+            "action_rate_percent": float(summary_row.action_rate_percent or 0),
+            "avg_aging_risk": float(summary_row.avg_aging_risk or 0),
+            "denial_overturn_rate": float(summary_row.denial_overturn_rate or 0),
+            "predicted_payment_rate": float(summary_row.predicted_payment_rate or 0),
+            "actual_payment_rate": float(summary_row.actual_payment_rate or 0),
+            "prediction_bias": float(summary_row.prediction_bias or 0),
+        },
+        "trend": trend,
+    }
+
+
 def _month_bounds(month_key: str) -> tuple[str, str]:
     year, month = (int(part) for part in month_key.split("-"))
     last_day = calendar.monthrange(year, month)[1]
     return f"{month_key}-01", f"{month_key}-{last_day:02d}"
+
+
+def _estimate_actionable_ar(ar_backlog: float, workable_inventory: int, total_inventory: int) -> float:
+    if ar_backlog <= 0 or total_inventory <= 0:
+        return 0.0
+    return round(float(ar_backlog) * (float(workable_inventory) / float(total_inventory)), 2)
+
+
+_date_phase_inventory_cache: Dict[str, Any] = {}
+
+
+@optimix_iks_bp.get("/date-phase-inventory")
+def api_date_phase_inventory():
+    month = request.args.get("month", "").strip()
+    phase = _normalize_phase_param(request.args.get("phase", "").strip())
+    force_refresh = _request_refresh_requested()
+
+    if month:
+        try:
+            _month_bounds(month)
+        except Exception:
+            return jsonify({"error": "invalid period"}), 400
+
+    cache_key = f"date_phase_inventory:{month or 'recent'}:{phase or 'all'}"
+    cached = _date_phase_inventory_cache.get(cache_key, {})
+    if not force_refresh and cached.get("ts", 0) > time.time() - CACHE_TTL_SECONDS:
+        return jsonify(cached["data"])
+
+    client = _get_prod_bq_client() or _build_ar_bq_client()
+    if client is None:
+        return jsonify({"error": "bq_unavailable"}), 503
+
+    normalized_phase = _date_phase_phase_name(phase)
+    phase_filter = f"AND phase = '{normalized_phase}'" if normalized_phase else ""
+    if month:
+        month_start, month_end = _month_bounds(month)
+        date_filter = f"AND ITTT_Date BETWEEN DATE '{month_start}' AND DATE '{month_end}'"
+    else:
+        date_filter = "AND ITTT_Date BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 120 DAY) AND CURRENT_DATE()"
+
+    sql = f"""
+        SELECT
+            ITTT_Date AS metric_date,
+            SUM(Total_Inventory) AS total_inventory,
+            SUM(Workable_Inventory) AS workable_inventory,
+            SUM(Total_NPNR) AS total_npnr,
+            SUM(Total_Denials) AS total_denials,
+            ROUND(SUM(CAST(AR_Backlog AS FLOAT64)), 2) AS ar_backlog,
+            SUM(Pending_Payer_In_Transit) AS pending_payer_in_transit,
+            SUM(Resolved_Paid_MTD) AS resolved_paid_mtd,
+            SUM(action_rate_total_workable) AS action_rate_total_workable,
+            SUM(action_rate_total_touched) AS action_rate_total_touched,
+            ROUND(
+                SAFE_DIVIDE(SUM(action_rate_total_touched), NULLIF(SUM(action_rate_total_workable), 0)) * 100,
+                2
+            ) AS action_rate_percent,
+            ROUND(AVG(CAST(avg_aging_risk AS FLOAT64)), 2) AS avg_aging_risk,
+            ROUND(AVG(CAST(denial_overturn_rate AS FLOAT64)), 2) AS denial_overturn_rate
+        FROM `{DATE_PHASE_ANALYTICS_TABLE}`
+        WHERE 1 = 1
+          {phase_filter}
+          {date_filter}
+        GROUP BY metric_date
+        ORDER BY metric_date
+    """
+
+    try:
+        rows = list(client.query(sql).result())
+    except Exception as exc:
+        logger.error("date-phase-inventory query failed: %s", exc)
+        return jsonify({"error": str(exc)}), 500
+
+    daily: list[Dict[str, Any]] = []
+    for row in rows:
+        total_inventory = int(row.total_inventory or 0)
+        workable_inventory = int(row.workable_inventory or 0)
+        ar_backlog = round(float(row.ar_backlog or 0), 2)
+        workable_sar = _estimate_actionable_ar(ar_backlog, workable_inventory, total_inventory)
+        touched_claims = int(row.action_rate_total_touched or 0)
+        burn_rate = round((touched_claims / workable_inventory), 4) if workable_inventory else 0.0
+        daily.append({
+            "date": str(row.metric_date),
+            "total_open_claims": total_inventory,
+            "workable_claims": workable_inventory,
+            "total_open_sar": ar_backlog,
+            "workable_sar": workable_sar,
+            "cash_collected_today": int(row.resolved_paid_mtd or 0),
+            "sar_worked_today": workable_sar,
+            "claims_worked_today": touched_claims,
+            "workable_claims_backlog": max(total_inventory - workable_inventory, 0),
+            "workable_sar_backlog": round(max(ar_backlog - workable_sar, 0), 2),
+            "pct_inventory_workable": round((workable_inventory / total_inventory), 4) if total_inventory else 0,
+            "pct_sar_workable": round((workable_sar / ar_backlog), 4) if ar_backlog else 0,
+            "burn_rate": burn_rate,
+            "pending_payer_in_transit": int(row.pending_payer_in_transit or 0),
+            "total_npnr": int(row.total_npnr or 0),
+            "total_denials": int(row.total_denials or 0),
+            "resolved_paid_mtd": int(row.resolved_paid_mtd or 0),
+            "action_rate": round(float(row.action_rate_percent or 0) / 100, 4),
+            "avg_aging_risk": float(row.avg_aging_risk or 0),
+            "denial_overturn_rate": round(float(row.denial_overturn_rate or 0) / 100, 4),
+        })
+
+    latest_row = daily[-1] if daily else None
+    previous_row = daily[-2] if len(daily) > 1 else None
+    summary = {
+        "source_table": DATE_PHASE_ANALYTICS_TABLE,
+        "metric_mode": "date_phase_inventory_v2",
+        "latest_date": latest_row["date"] if latest_row else None,
+        "total_open_claims": latest_row["total_open_claims"] if latest_row else 0,
+        "model_eligible_claims": latest_row["total_open_claims"] if latest_row else 0,
+        "workable_claims": latest_row["workable_claims"] if latest_row else 0,
+        "total_open_sar": latest_row["total_open_sar"] if latest_row else 0,
+        "workable_sar": latest_row["workable_sar"] if latest_row else 0,
+        "pct_inventory_workable": latest_row["pct_inventory_workable"] if latest_row else 0,
+        "pct_sar_workable": latest_row["pct_sar_workable"] if latest_row else 0,
+        "workable_claims_backlog": latest_row["workable_claims_backlog"] if latest_row else 0,
+        "workable_sar_backlog": latest_row["workable_sar_backlog"] if latest_row else 0,
+        "cash_collected_today": latest_row["cash_collected_today"] if latest_row else 0,
+        "sar_worked_today": latest_row["sar_worked_today"] if latest_row else 0,
+        "claims_worked_today": latest_row["claims_worked_today"] if latest_row else 0,
+        "expected_cash": latest_row["workable_sar"] if latest_row else 0,
+        "burn_rate": latest_row["burn_rate"] if latest_row else 0,
+        "pending_payer_in_transit": latest_row["pending_payer_in_transit"] if latest_row else 0,
+        "total_npnr": latest_row["total_npnr"] if latest_row else 0,
+        "total_denials": latest_row["total_denials"] if latest_row else 0,
+        "action_rate": latest_row["action_rate"] if latest_row else 0,
+        "avg_aging_risk": latest_row["avg_aging_risk"] if latest_row else 0,
+        "denial_overturn_rate": latest_row["denial_overturn_rate"] if latest_row else 0,
+        "trends": {
+            "cash_collected_change": (
+                latest_row["cash_collected_today"] - (previous_row["cash_collected_today"] if previous_row else 0)
+            ) if latest_row else 0,
+            "claims_worked_change": (
+                latest_row["claims_worked_today"] - (previous_row["claims_worked_today"] if previous_row else 0)
+            ) if latest_row else 0,
+        },
+    }
+
+    result = {
+        "source": DATE_PHASE_ANALYTICS_TABLE,
+        "as_of": summary["latest_date"],
+        "phase": phase or "All Phases",
+        "month": month or None,
+        "daily": daily,
+        "summary": summary,
+    }
+    _date_phase_inventory_cache[cache_key] = {"ts": time.time(), "data": result}
+    return jsonify(result)
 
 
 def _month_range_label(start_month_key: str, end_month_key: str) -> str:
@@ -1487,14 +1827,8 @@ def _fetch_all_output_accuracy(phase: Optional[str] = None) -> Dict[str, Dict[st
             )
             SELECT
                 FORMAT_DATE('%Y-%m', ittt_date) AS mk,
-                ROUND(AVG(CASE
-                    WHEN predicted_payment > 0
-                    THEN SAFE_DIVIDE(correct_payment, predicted_payment) * 100
-                END), 2) AS payment_accuracy,
-                ROUND(AVG(CASE
-                    WHEN predicted_denial > 0
-                    THEN SAFE_DIVIDE(correct_denial, predicted_denial) * 100
-                END), 2) AS denial_accuracy
+                ROUND(SAFE_DIVIDE(SUM(correct_payment), SUM(predicted_payment)) * 100, 2) AS payment_accuracy,
+                ROUND(SAFE_DIVIDE(SUM(correct_denial), SUM(predicted_denial)) * 100, 2) AS denial_accuracy
             FROM daily_accuracy
             GROUP BY mk
         """
@@ -1545,14 +1879,24 @@ def _build_month_payload(
     prev_total_workable = _to_int(prev.get("Total_Workable"))
 
     # ── Response-based denominator for current (in-progress) month ──
-    # For the current month (e.g. April 7 → only 7 days of data), use only
-    # the days where responses have actually been received as denominator.
-    # This prevents artificially low accuracy numbers at the start of a month.
     current_month_key = datetime.now(timezone.utc).strftime("%Y-%m")
     is_current_month = (month_key == current_month_key)
 
     if is_current_month and "ITTT_Date" in month_df.columns and not month_df.empty:
-        # Filter to only days with actual responses received
+        # For denominator, use the claims predicted till now (excluding forecasts)
+        till_now_df = month_df[month_df["Is_Forecast"] == 0] if "Is_Forecast" in month_df.columns else month_df
+
+        if not till_now_df.empty:
+            till_cur = till_now_df[cols].sum().to_dict()
+            till_payment_pred = _to_int(till_cur.get("Payment_Prediction"))
+            till_denial_pred = _to_int(till_cur.get("Denial_Prediction"))
+            till_total_pred = _to_int(till_cur.get("Total_Prediction"))
+        else:
+            till_payment_pred = payment_prediction
+            till_denial_pred = denial_prediction
+            till_total_pred = total_prediction
+
+        # Filter to only days with actual responses received for actuals
         responded_df = month_df[month_df["Total_Response"].fillna(0).astype(int) > 0]
         if not responded_df.empty:
             resp_cur = responded_df[cols].sum().to_dict()
@@ -1562,28 +1906,28 @@ def _build_month_payload(
             resp_exact_day = _to_int(resp_cur.get("ExactDay_Response"))
             resp_total_workable = _to_int(resp_cur.get("Total_Workable"))
 
-            payment_accuracy = _pct(resp_payment_actual, resp_total_response)
-            denial_accuracy = _pct(resp_denial_actual, resp_total_response)
-            ittt_accuracy = _pct(resp_exact_day, resp_total_response)
+            payment_accuracy = _pct(resp_payment_actual, till_payment_pred)
+            denial_accuracy = _pct(resp_denial_actual, till_denial_pred)
+            ittt_accuracy = _pct(resp_exact_day, till_total_pred)
             denial_prevention_accuracy = _pct(resp_denial_actual, resp_total_workable)
         else:
-            payment_accuracy = _pct(payment_actual, total_response)
-            denial_accuracy = _pct(denial_actual, total_response)
-            ittt_accuracy = _pct(exact_day_response, total_response)
+            payment_accuracy = _pct(payment_actual, till_payment_pred)
+            denial_accuracy = _pct(denial_actual, till_denial_pred)
+            ittt_accuracy = _pct(exact_day_response, till_total_pred)
             denial_prevention_accuracy = _pct(denial_actual, total_workable)
     else:
-        payment_accuracy = _pct(payment_actual, total_response)
-        denial_accuracy = _pct(denial_actual, total_response)
-        ittt_accuracy = _pct(exact_day_response, total_response)
+        payment_accuracy = _pct(payment_actual, payment_prediction)
+        denial_accuracy = _pct(denial_actual, denial_prediction)
+        ittt_accuracy = _pct(exact_day_response, total_prediction)
         denial_prevention_accuracy = _pct(denial_actual, total_workable)
 
-    prev_payment_accuracy = _pct(prev_payment_actual, prev_total_response)
-    prev_denial_accuracy = _pct(prev_denial_actual, prev_total_response)
-    prev_ittt_accuracy = _pct(prev_exact_day_response, prev_total_response)
+    prev_payment_accuracy = _pct(prev_payment_actual, _to_int(prev.get("Payment_Prediction")))
+    prev_denial_accuracy = _pct(prev_denial_actual, _to_int(prev.get("Denial_Prediction")))
+    prev_ittt_accuracy = _pct(prev_exact_day_response, _to_int(prev.get("Total_Prediction")))
     prev_denial_prevention_accuracy = _pct(prev_denial_actual, prev_total_workable)
 
     daily_records = []
-    
+
     # Ensure there's only one row per date by aggregating (vital for "All Clients")
     if "ITTT_Date" in month_df.columns and not month_df.empty:
         agg_cols = month_df.select_dtypes(include=["number"]).columns.tolist()
@@ -1613,7 +1957,7 @@ def _build_month_payload(
                 "ittt_workable": _to_int(row.get("Total_Prediction")),  # Frontend maps "ITTT Predicted" to ittt_workable
                 "total_workable": _to_int(row.get("Total_Workable")),
                 "exact_day_response": _to_int(row.get("ExactDay_Response")),
-                # Dashboard label "ITTT Predicted" Definition: "Total claims which that ITTT date on that date" 
+                # Dashboard label "ITTT Predicted" Definition: "Total claims which that ITTT date on that date"
                 # matches definition of Total_Prediction. UI had it at 0. Mapping to prediction volume.
                 "ittt_predicted": _to_int(row.get("Total_Prediction")),
                 "third_prediction_expired_no_response": _to_int(
@@ -1662,12 +2006,12 @@ def _build_month_payload(
     # If payment/denial model tables lag for a given month, fall back to exact-month
     # daily precision computed from ITTT_PP_Output instead of forward-filling stale values.
     try:
-        model_acc = (all_model_acc or {}).get(month_key, {})
+        model_acc = _fetch_model_accuracy(month_key)
         y, m = int(month_key.split("-")[0]), int(month_key.split("-")[1])
         prev_m = m - 1 if m > 1 else 12
         prev_y = y if m > 1 else y - 1
         prev_key = f"{prev_y:04d}-{prev_m:02d}"
-        prev_model_acc = (all_model_acc or {}).get(prev_key, {})
+        prev_model_acc = _fetch_model_accuracy(prev_key)
         output_acc = (output_accuracy_acc or {}).get(month_key, {})
         prev_output_acc = (output_accuracy_acc or {}).get(prev_key, {})
 
@@ -1887,7 +2231,7 @@ def _refresh_cache() -> bool:
             mask_actual = merged_ittt_raw_df["Is_Forecast"] == 0
         else:
             mask_actual = pd.Series([True] * len(merged_ittt_raw_df), index=merged_ittt_raw_df.index)
-        
+
         if mask_actual.any():
             te = merged_ittt_raw_df.loc[mask_actual, "ThirdPredictionExpired_NoResponse"].fillna(0).astype(int)
             da = merged_ittt_raw_df.loc[mask_actual, "Denial_Actual"].fillna(0).astype(int)
@@ -2083,33 +2427,33 @@ def _fetch_ar_backlog(phase: Optional[str] = None, as_of_date: Optional[str] = N
     # Map enterprise_id → phase, then aggregate totals and daily trend
     phase_totals: Dict[str, int] = {}
     phase_balances: Dict[str, float] = {}
-    
+
     # Nested mapping: phase -> date_str -> { count, balance }
     phase_daily: Dict[str, Dict[str, Dict[str, float]]] = {}
 
     for row in rows:
         suffix = str(row.enterprise_suffix or "").strip()
         mapped_phase = _phase_from_suffix(suffix)
-        
+
         count = int(row.backlog_count or 0)
         balance = float(row.total_insurance_balance or 0)
-        
+
         phase_totals[mapped_phase] = phase_totals.get(mapped_phase, 0) + count
         phase_balances[mapped_phase] = phase_balances.get(mapped_phase, 0.0) + balance
-        
+
         if row.follow_up_date:
             date_str = str(row.follow_up_date)
             if mapped_phase not in phase_daily:
                 phase_daily[mapped_phase] = {}
             if date_str not in phase_daily[mapped_phase]:
                 phase_daily[mapped_phase][date_str] = {"count": 0.0, "balance": 0.0}
-            
+
             phase_daily[mapped_phase][date_str]["count"] += count
             phase_daily[mapped_phase][date_str]["balance"] += balance
 
     # Build the trend array for a specific phase (or aggregated for "All")
     trend = []
-    
+
     if phase:
         target_daily = phase_daily.get(phase, {})
         for date_str in sorted(target_daily.keys()): # oldest first
@@ -2118,7 +2462,7 @@ def _fetch_ar_backlog(phase: Optional[str] = None, as_of_date: Optional[str] = N
                 "backlog_count": int(target_daily[date_str]["count"]),
                 "backlog_balance": round(target_daily[date_str]["balance"], 2)
             })
-            
+
         count = phase_totals.get(phase, 0)
         balance = phase_balances.get(phase, 0.0)
         # Convert phase_daily to serializable format: { phase: [{ date, count, balance }, ...] }
@@ -2146,7 +2490,7 @@ def _fetch_ar_backlog(phase: Optional[str] = None, as_of_date: Optional[str] = N
                 all_daily[date_str] = {"count": 0.0, "balance": 0.0}
             all_daily[date_str]["count"] += metrics["count"]
             all_daily[date_str]["balance"] += metrics["balance"]
-            
+
     for date_str in sorted(all_daily.keys()):
         trend.append({
             "date": date_str,
@@ -2331,7 +2675,7 @@ def api_npnr_monetary():
     start_date = (request.args.get("start_date") or "").strip() or None
     end_date = (request.args.get("end_date") or "").strip() or None
     result = _fetch_npnr_monetary(start_date, end_date)
-    
+
     # Graceful mock injection for dashboard demonstration if BigQuery is mostly empty
     if result.get("total_monetary_value", 0) < 100000:
         result = {
@@ -2357,12 +2701,14 @@ _NPNR_EXCEL_FILENAME = "GIA NPNR last left after work .xlsx"
 _NPNR_EXCEL_SHEET = "Sheet1"
 
 # Responsible Entity label mapping from the Optimix workbook.
+# 0 = Patient Responsibility (NOT part of NPNR — excluded entirely)
+# 1-3 = Insurance entities; 4 = Beyond (quaternary+)
 _ENTITY_LABELS: Dict[int, str] = {
-    0: "Unknown",
+    0: "Patient Responsibility",
     1: "Primary",
     2: "Secondary",
     3: "Tertiary",
-    4: "Other",
+    4: "Beyond",
 }
 
 _NPNR_NULL_MARKERS = {"", "\\N", "nan", "none", "null", "<na>", "nat", "n/a", "########"}
@@ -2385,6 +2731,15 @@ def _entity_label(value: Any) -> str:
     except Exception:
         return "Unknown"
     return _ENTITY_LABELS.get(numeric, f"Entity {numeric}")
+
+
+def _normalize_npnr_entity(value: Any) -> int:
+    """Return the raw entity value (0-4). 0 = Patient Resp, 4 = Beyond/Other/Unmapped."""
+    try:
+        numeric = int(float(value))
+    except Exception:
+        return 4
+    return numeric if numeric in (0, 1, 2, 3, 4) else 4
 
 
 def _load_npnr_excel_df() -> Optional[pd.DataFrame]:
@@ -2476,6 +2831,8 @@ def _get_npnr_encounter_sql_in():
     return sql_in
 
 _npnr_live_records_cache = {}
+_npnr_live_grouped_cache = {}
+_npnr_payer_payment_days_cache: Dict[str, Any] = {"ts": 0, "data": {}}
 
 def _run_records_query_cached(client, sql: str, cache_seconds: int = 300) -> list:
     """Cache the entire result set of the records query for pagination and sorting optimizations."""
@@ -2483,25 +2840,392 @@ def _run_records_query_cached(client, sql: str, cache_seconds: int = 300) -> lis
     for k in list(_npnr_live_records_cache.keys()):
         if now - _npnr_live_records_cache[k]["ts"] > cache_seconds:
             del _npnr_live_records_cache[k]
-            
+
     if sql in _npnr_live_records_cache:
         return _npnr_live_records_cache[sql]["data"]
-        
+
     res = list(client.query(sql).result())
     _npnr_live_records_cache[sql] = {"ts": now, "data": res}
     return res
 
 
+def _get_npnr_grouped_payload_cached(cache_key: str, builder, cache_seconds: int = 300):
+    """Cache grouped NPNR payloads so pagination and re-sorts stay in-process."""
+    now = time.time()
+    for k in list(_npnr_live_grouped_cache.keys()):
+        if now - _npnr_live_grouped_cache[k]["ts"] > cache_seconds:
+            del _npnr_live_grouped_cache[k]
+
+    if cache_key in _npnr_live_grouped_cache:
+        return _npnr_live_grouped_cache[cache_key]["data"]
+
+    data = builder()
+    _npnr_live_grouped_cache[cache_key] = {"ts": now, "data": data}
+    return data
+
+
+def _workplan_logic_sql(alias: str = "") -> Dict[str, str]:
+    """Build one canonical 45-day WorkPlan / NPNR rule set for SQL fragments."""
+    prefix = f"{alias}." if alias else ""
+    worked_last_window = (
+        f"({prefix}last_activity_date IS NOT NULL "
+        f"AND {prefix}last_activity_date >= DATE_SUB(CURRENT_DATE(), INTERVAL {WORKPLAN_LOOKBACK_DAYS} DAY))"
+    )
+    workplan_condition = f"NOT {worked_last_window}"
+    transaction_missing_condition = f"COALESCE({prefix}last_payment_date, {prefix}response_post_date) IS NULL"
+    stale_last_bill_condition = (
+        f"{prefix}last_bill_date IS NOT NULL "
+        f"AND {prefix}last_bill_date < DATE_SUB(CURRENT_DATE(), INTERVAL {WORKPLAN_LOOKBACK_DAYS} DAY)"
+    )
+    npnr_condition = f"""
+                {workplan_condition}
+                 AND {transaction_missing_condition}
+                 AND {stale_last_bill_condition}
+                 AND COALESCE({prefix}pp_actual_flag, 0) != 1
+    """.strip()
+    return {
+        "worked_last_window": worked_last_window,
+        "workplan_condition": workplan_condition,
+        "transaction_missing_condition": transaction_missing_condition,
+        "stale_last_bill_condition": stale_last_bill_condition,
+        "npnr_condition": npnr_condition,
+    }
+
+
+def _get_npnr_avg_payment_days_map() -> Dict[str, float]:
+    """Return avg payer response/payment days mapped to the 322 parent payer names."""
+    now = time.time()
+    cached = _npnr_payer_payment_days_cache
+    if now - float(cached.get("ts", 0)) < CACHE_TTL_SECONDS and cached.get("data"):
+        return cached["data"]
+
+    client = _get_prod_bq_client()
+    if client is None:
+        return cached.get("data", {})
+
+    sql = f"""
+        SELECT
+            COALESCE(NULLIF(TRIM(Payer_Name), ''), 'Unknown') AS payer_name,
+            AVG(DATE_DIFF(COALESCE(DATE(Post_Date), PP_Post_Date), DATE(Last_bill_date), DAY)) AS avg_payment_days
+        FROM `{ITTT_PP_OUTPUT_TABLE}`
+        WHERE DATE(Last_bill_date) IS NOT NULL
+          AND COALESCE(DATE(Post_Date), PP_Post_Date) IS NOT NULL
+        GROUP BY payer_name
+    """
+
+    try:
+        mapped: Dict[str, list[float]] = {}
+        for row in client.query(sql).result():
+            payer_name = str(getattr(row, "payer_name", "") or "").strip()
+            avg_payment_days = getattr(row, "avg_payment_days", None)
+            if not payer_name or avg_payment_days is None:
+                continue
+            parent = _resolve_npnr_parent_payer(payer_name)
+            if not parent:
+                continue
+            mapped.setdefault(parent, []).append(float(avg_payment_days))
+
+        averaged = {
+            payer_name: round(sum(values) / len(values), 1)
+            for payer_name, values in mapped.items()
+            if values
+        }
+        _npnr_payer_payment_days_cache["ts"] = now
+        _npnr_payer_payment_days_cache["data"] = averaged
+        return averaged
+    except Exception as exc:
+        logger.warning("NPNR avg payment days query failed: %s", exc)
+        return cached.get("data", {})
+
+
+def _normalize_npnr_payer_name(value: Any) -> str:
+    text = str(value or "").strip().upper()
+    return re.sub(r"\s+", " ", text)
+
+
+def _resolve_npnr_parent_payer(*payer_candidates: Any) -> Optional[str]:
+    for candidate in payer_candidates:
+        normalized = _normalize_npnr_payer_name(candidate)
+        if not normalized:
+            continue
+        direct = _NPNR_PARENT_PAYER_NORMALIZED.get(normalized)
+        if direct:
+            return direct
+        mapped = _NPNR_OPTIMIX_TO_AVAILITY_NORMALIZED.get(normalized)
+        if not mapped:
+            continue
+        mapped_normalized = _normalize_npnr_payer_name(mapped)
+        direct_mapped = _NPNR_PARENT_PAYER_NORMALIZED.get(mapped_normalized)
+        if direct_mapped:
+            return direct_mapped
+        return str(mapped or "").strip() or None
+    return None
+
+
+def _build_npnr_grouped_payload(record_rows: list) -> Dict[str, Any]:
+    """Build summary, entity breakdown, and grouped payer rows from one live result set."""
+    unknown_variants = {"unknown", "nan", "none", "null", "", "n/a"}
+    avg_payment_days_map = _get_npnr_avg_payment_days_map()
+    npnr_excel_df = _load_npnr_excel_df()
+    excel_entity_map: Dict[str, int] = {}
+    excel_payer_map: Dict[str, str] = {}
+    excel_encounter_set: set = set()
+    if npnr_excel_df is not None and not npnr_excel_df.empty:
+        for row in npnr_excel_df.itertuples(index=False):
+            encounter_number = str(getattr(row, "encounter_number", "") or "").strip()
+            if not encounter_number:
+                continue
+            excel_encounter_set.add(encounter_number)
+            excel_entity_map[encounter_number] = int(getattr(row, "optimix_res_entity", 0) or 0)
+            display_payer_name = str(getattr(row, "display_payer_name", "") or "").strip()
+            if display_payer_name:
+                excel_payer_map[encounter_number] = display_payer_name
+    mapped_unique_payers = set()
+    subgroupings = set()
+    financial_classes = set()
+    payer_agg: Dict[str, Dict[str, Any]] = {}
+
+    total_amount = 0.0
+    total_claim_age = 0.0
+    patient_resp_count = 0
+    patient_resp_amount = 0.0
+
+    for row in record_rows:
+        encounter_number = str(row.encounter_number or "").strip()
+
+        excel_payer_name = excel_payer_map.get(encounter_number) or ""
+        raw_payer_name = row.payer_name or excel_payer_name or ""
+        parent = _resolve_npnr_parent_payer(raw_payer_name, excel_payer_name)
+        if not parent:
+            parent = "Other Payer"
+
+        # Always prefer the Excel entity (source of truth) over the BQ entity
+        excel_entity = excel_entity_map.get(encounter_number)
+        if excel_entity and excel_entity in (1, 2, 3, 4):
+            entity = excel_entity
+        else:
+            entity = _normalize_npnr_entity(row.responsible_entity)
+            if entity == 0 and excel_entity is not None and excel_entity in (1, 2, 3, 4):
+                entity = excel_entity
+
+        # Entity 0 = Patient Responsibility → track as KPI but exclude from NPNR
+        if entity == 0:
+            patient_resp_count += 1
+            patient_resp_amount += float(row.amount or 0)
+            continue
+
+        amount = float(row.amount or 0)
+        claim_age = float(row.claim_age_in_days or 0)
+        total_amount += amount
+        total_claim_age += claim_age
+
+        normalized_parent = str(parent).strip()
+        if normalized_parent and normalized_parent.lower() not in unknown_variants:
+            mapped_unique_payers.add(normalized_parent)
+
+        subgrouping = str(row.payer_subgrouping or "").strip()
+        if subgrouping and subgrouping.lower() not in unknown_variants:
+            subgroupings.add(subgrouping)
+
+        financial_class = str(row.financial_class or "").strip()
+        if financial_class and financial_class.lower() not in unknown_variants:
+            financial_classes.add(financial_class)
+
+        group_key = f"{parent}::{entity}"
+
+        if group_key not in payer_agg:
+            payer_agg[group_key] = {
+                "person_id": row.person_id,
+                "encounter_count": 0,
+                "amount": 0.0,
+                "sum_claim_age": 0.0,
+                "last_bill_date": None,
+                "responsible_entity": entity,
+                "entity_counts": {},
+                "entity_amounts": {},
+                "payer_id": row.payer_id,
+                "payer_name": parent,
+                "payer_detail": set(),
+                "payer_subgrouping": set(),
+                "payer_subgrouping_2": set(),
+                "financial_class": set(),
+                "financial_class_2": set(),
+                "last_activity_date": row.last_activity_date,
+                "last_status_code": row.last_status_code,
+                "last_action_code": row.last_action_code,
+                "encounters": [],
+            }
+
+        payer_bucket = payer_agg[group_key]
+        payer_bucket["entity_counts"][entity] = payer_bucket["entity_counts"].get(entity, 0) + 1
+        payer_bucket["entity_amounts"][entity] = payer_bucket["entity_amounts"].get(entity, 0.0) + amount
+        payer_bucket["encounters"].append({
+            "encounter_number": row.encounter_number,
+            "person_id": row.person_id,
+            "amount": amount,
+            "claim_age_in_days": claim_age,
+            "last_bill_date": row.last_bill_date.isoformat() if row.last_bill_date else None,
+            "financial_class": row.financial_class if row.financial_class else "Unknown",
+            "payer_subgrouping": row.payer_subgrouping if row.payer_subgrouping else "Unknown",
+            "payer_name": raw_payer_name if raw_payer_name else "Unknown",
+            "responsible_entity": entity,
+            "entity_label": _entity_label(entity),
+        })
+        payer_bucket["encounter_count"] += 1
+        payer_bucket["amount"] += amount
+        payer_bucket["sum_claim_age"] += claim_age
+
+        if row.last_bill_date and (not payer_bucket["last_bill_date"] or row.last_bill_date > payer_bucket["last_bill_date"]):
+            payer_bucket["last_bill_date"] = row.last_bill_date
+
+        if row.payer_name:
+            payer_bucket["payer_detail"].add(row.payer_name)
+        if row.payer_subgrouping:
+            payer_bucket["payer_subgrouping"].add(row.payer_subgrouping)
+        if row.payer_subgrouping_2:
+            payer_bucket["payer_subgrouping_2"].add(row.payer_subgrouping_2)
+        if row.financial_class:
+            payer_bucket["financial_class"].add(row.financial_class)
+        if row.financial_class_2:
+            payer_bucket["financial_class_2"].add(row.financial_class_2)
+
+    flattened = []
+    entity_rollup: Dict[int, Dict[str, Any]] = {}
+    for group_key, payer_bucket in payer_agg.items():
+        parent_name = payer_bucket["payer_name"]
+        resolved_entity = payer_bucket["responsible_entity"]
+
+        avg_age = round(payer_bucket["sum_claim_age"] / payer_bucket["encounter_count"], 1) if payer_bucket["encounter_count"] > 0 else 0
+
+        resolved_fin = ", ".join(sorted(x for x in payer_bucket["financial_class"] if x and x != "Unknown"))
+        resolved_sub = ", ".join(sorted(x for x in payer_bucket["payer_subgrouping"] if x and x != "Unknown"))
+        resolved_sub2 = ", ".join(sorted(x for x in payer_bucket["payer_subgrouping_2"] if x and x != "Unknown"))
+        resolved_fin2 = ", ".join(sorted(x for x in payer_bucket["financial_class_2"] if x and x != "Unknown"))
+
+        if (not resolved_fin or resolved_fin == "Unknown") and parent_name and parent_name != "Unknown":
+            payer_name_lower = str(parent_name).lower()
+            if any(x in payer_name_lower for x in ["medicare", "mcr", "advantage"]):
+                resolved_fin = "Medicare Advantage"
+            elif any(x in payer_name_lower for x in ["medicaid", "mcd", "chip", "star", "ahcccs"]):
+                resolved_fin = "Medicaid"
+            elif any(x in payer_name_lower for x in ["tricare", "va ", "champ", "veteran"]):
+                resolved_fin = "Government"
+            elif any(x in payer_name_lower for x in ["self pay", "uninsured", "indigent"]):
+                resolved_fin = "Self Pay"
+            elif any(x in payer_name_lower for x in ["bcbs", "blue", "aetna", "cigna", "united", "humana", "commercial", "health", "plan", "network", "benefits", "mutual", "care", "ppo", "hmo", "epo"]):
+                resolved_fin = "Commercial"
+
+        if not resolved_sub and parent_name and parent_name != "Unknown":
+            resolved_sub = parent_name
+
+        encounters = payer_bucket["encounters"]
+        avg_payment_days = avg_payment_days_map.get(parent_name)
+
+        for child in encounters:
+            f_val = str(child.get("financial_class") or "").strip().lower()
+            if (not f_val or f_val in unknown_variants) and resolved_fin:
+                child["financial_class"] = resolved_fin
+
+            s_val = str(child.get("payer_subgrouping") or "").strip().lower()
+            if (not s_val or s_val in unknown_variants) and resolved_sub:
+                child["payer_subgrouping"] = resolved_sub
+
+            p_val = str(child.get("payer_name") or "").strip().lower()
+            if not p_val or p_val in unknown_variants:
+                child["payer_name"] = parent_name
+
+            child["avg_payment_days"] = avg_payment_days
+
+        flattened.append({
+            "person_id": payer_bucket["person_id"],
+            "encounter_number": f"{payer_bucket['encounter_count']} Claims",
+            "count": payer_bucket["encounter_count"],
+            "last_bill_date": payer_bucket["last_bill_date"].isoformat() if payer_bucket["last_bill_date"] is not None else None,
+            "amount": round(payer_bucket["amount"], 2),
+            "responsible_entity": resolved_entity,
+            "entity_label": _entity_label(resolved_entity),
+            "payer_id": payer_bucket["payer_id"] if payer_bucket["payer_id"] and str(payer_bucket["payer_id"]).lower() != "unknown" else "",
+            "payer_name": parent_name if parent_name and str(parent_name).lower() != "unknown" else "",
+            "payer_detail": ", ".join(sorted(x for x in payer_bucket["payer_detail"] if x and str(x).lower() not in unknown_variants)),
+            "payer_subgrouping": resolved_sub,
+            "payer_subgrouping_2": resolved_sub2,
+            "financial_class": resolved_fin,
+            "financial_class_2": resolved_fin2,
+            "avg_payment_days": avg_payment_days,
+            "claim_age_in_days": avg_age,
+            "last_activity_date": payer_bucket["last_activity_date"].isoformat() if payer_bucket["last_activity_date"] is not None else None,
+            "last_status_code": payer_bucket["last_status_code"] if payer_bucket["last_status_code"] and str(payer_bucket["last_status_code"]).lower() not in unknown_variants else "",
+            "last_action_code": payer_bucket["last_action_code"] if payer_bucket["last_action_code"] and str(payer_bucket["last_action_code"]).lower() not in unknown_variants else "",
+            "encounters": sorted(
+                encounters,
+                key=lambda item: (
+                    item.get("last_bill_date") or "",
+                    float(item.get("amount") or 0),
+                ),
+                reverse=True,
+            )[:500],
+        })
+
+        for child_entity, claim_count in payer_bucket["entity_counts"].items():
+            entity_bucket = entity_rollup.setdefault(child_entity, {
+                "entity": child_entity,
+                "entity_label": _entity_label(child_entity),
+                "claim_count": 0,
+                "payer_names": set(),
+                "total_amount": 0.0,
+            })
+            entity_bucket["claim_count"] += claim_count
+            entity_bucket["payer_names"].add(parent_name)
+            entity_bucket["total_amount"] += payer_bucket["entity_amounts"].get(child_entity, 0.0)
+
+    entity_breakdown = [
+        {
+            "entity": entity,
+            "entity_label": bucket["entity_label"],
+            "claim_count": bucket["claim_count"],
+            "unique_payers": len(bucket["payer_names"]),
+            "total_amount": round(bucket["total_amount"], 2),
+        }
+        for entity, bucket in sorted(entity_rollup.items(), key=lambda item: item[0])
+    ]
+
+    summary = {
+        "total_claims": sum(bucket["claim_count"] for bucket in entity_breakdown),
+        "entity_count": len(entity_rollup),
+        "unique_payers": len(mapped_unique_payers),
+        "unique_payer_subgroupings": len(subgroupings),
+        "unique_financial_classes": len(financial_classes),
+        "total_amount": round(total_amount, 2),
+        "avg_claim_age_days": round(total_claim_age / sum(bucket["claim_count"] for bucket in entity_breakdown), 1) if entity_breakdown else 0.0,
+        "whitelist_only": True,
+        "source": "live_bq",
+        "patient_responsibility": {
+            "count": patient_resp_count,
+            "amount": round(patient_resp_amount, 2),
+            "label": "Patient Responsibility",
+        },
+    }
+
+    return {
+        "summary": summary,
+        "by_entity": entity_breakdown,
+        "records": flattened,
+    }
+
+
 @optimix_iks_bp.get("/npnr-data")
 def api_npnr_data():
-    """Return live payer-level NPNR detail for the lower WorkPlan section only."""
+    """Return live payer-level NPNR detail using the original separate logic."""
     phase = _normalize_phase_param((request.args.get("phase") or "").strip())
+    month = (request.args.get("month") or "").strip()
+    force_refresh = _request_refresh_requested()
     search = (request.args.get("search") or "").strip().lower()
-    sort_by = (request.args.get("sort_by") or "claim_age_in_days").strip()
+    sort_by = (request.args.get("sort_by") or "last_bill_date").strip()
     sort_order = (request.args.get("sort_order") or "desc").strip().lower()
     page = max(int(request.args.get("page") or 1), 1)
     per_page = min(max(int(request.args.get("per_page") or 12), 10), 100)
     entity_filter = (request.args.get("entity") or "").strip()
+    balance_zero = str(request.args.get("balance_zero", "")).lower() == "true"
 
     entity_value = None
     if entity_filter:
@@ -2513,384 +3237,187 @@ def api_npnr_data():
                 None,
             )
 
-    # The user-provided specific query for live NPNR over the last 45 days
-    payer_filter_sql = f"AND c.Payer_Name IN ({_NPNR_PAYER_SQL_IN})" if _NPNR_PAYER_SQL_IN else ""
-    enc_sql_in = _get_npnr_encounter_sql_in()
-    encounter_filter_sql = f"AND CAST(a.Enc_nbr AS STRING) IN ({enc_sql_in})" if enc_sql_in else ""
+    phase_clause = _phase_filter_sql(phase, "Encounter_Number")
+    month_filter_sql = ""
+    if month:
+        try:
+            _, month_end = _month_bounds(month)
+            month_filter_sql = f"AND COALESCE(m.Last_bill_date, a.last_bill_date) <= DATE '{month_end}'"
+        except Exception:
+            return jsonify({"error": "invalid period"}), 400
 
+    # Simplified separate logic CTE for NPNR Detail
     base_detail_cte = f"""
-        WITH npnr_live_detail AS (
+        WITH latest_output AS (
+          SELECT
+            CAST(Encounter_Number AS STRING) AS encounter_number,
+            COALESCE(DATE(Post_Date), PP_Post_Date) AS response_post_date,
+            PP_ActualFlag AS pp_actual_flag,
+            ROW_NUMBER() OVER (
+              PARTITION BY CAST(Encounter_Number AS STRING)
+              ORDER BY
+                SAFE.PARSE_DATE('%Y-%m-%d', ITTT_Date) DESC,
+                COALESCE(DATE(Post_Date), PP_Post_Date) DESC
+            ) AS row_num
+          FROM `{ITTT_PP_OUTPUT_TABLE}`
+          WHERE SAFE.PARSE_DATE('%Y-%m-%d', ITTT_Date) IS NOT NULL
+        ),
+        ar_dedup AS (
+          SELECT
+            TRIM(CAST(Encounter_Number AS STRING)) AS encounter_number,
+            MAX(CAST(Person_Number AS STRING)) AS person_number,
+            MAX(SAFE_CAST(COALESCE(Total_Balance, Insurance_Balance, 0) AS FLOAT64)) AS balance,
+            MAX(CAST(Payer_Id AS STRING)) AS payer_id,
+            MAX(COALESCE(NULLIF(Primary_Insurance_Name, ''), NULLIF(Payer_Name, ''))) AS ar_payer_name,
+            MAX(Encounter_Age) AS encounter_age,
+            MAX(IFNULL(Is_Touched, 0)) AS is_touched,
+            MAX(IFNULL(Number_Of_Touches, 0)) AS number_of_touches,
+            MAX(last_Activity_Date) AS last_activity_date,
+            MAX(DATE(Last_Bill_Date)) AS last_bill_date,
+            MAX(DATE(Last_Payment_Date)) AS last_payment_date,
+            MAX(CAST(Status_Code_Id AS STRING)) AS last_status_code,
+            MAX(CAST(Action_Code_Id AS STRING)) AS last_action_code
+          FROM `iksgcp.iks_dwh_gia.main_ar_workflow`
+          WHERE 1 = 1
+            {phase_clause}
+          GROUP BY 1
+        ),
+        scoped_ar AS (
+          SELECT *
+          FROM ar_dedup
+          WHERE (
+            {'NOT (balance > 0)' if balance_zero else 'balance > 0'}
+          )
+            AND payer_id IS NOT NULL
+            AND TRIM(payer_id) != ''
+            AND TRIM(payer_id) != '0'
+        ),
+        main_enc AS (
             SELECT
-                CAST(a.Person_id AS STRING) AS person_id,
-                CAST(a.Enc_nbr AS STRING) AS encounter_number,
-                CAST(c.Encounter_Number AS STRING) AS enc_from_main_encounter,
-                DATE(a.Last_bill_date) AS last_bill_date,
-                SAFE_CAST(a.Amt AS FLOAT64) AS amount,
-                SAFE_CAST(COALESCE(c.Responsible_Entity, 0) AS INT64) AS responsible_entity,
-                CAST(c.Payer_Id AS STRING) AS payer_id,
-                COALESCE(NULLIF(c.Payer_Name, ''), 'Unknown') AS payer_name,
-                COALESCE(NULLIF(c.Payer_Subgrouping, ''), '') AS payer_subgrouping,
-                COALESCE(NULLIF(c.Payer_Subgrouping_2, ''), '') AS payer_subgrouping_2,
-                COALESCE(NULLIF(c.Financial_Class, ''), '') AS financial_class,
-                COALESCE(NULLIF(c.Financial_Class_2, ''), '') AS financial_class_2,
-                DATE_DIFF(CURRENT_DATE(), DATE(a.Last_bill_date), DAY) AS claim_age_in_days,
-                CAST(NULL AS DATE) AS last_activity_date,
-                CAST(NULL AS STRING) AS last_status_code,
-                CAST(NULL AS STRING) AS last_action_code
-            FROM `iksgcp.iks_dwh_gia.T_Dwh_Patient_Encounter` a
-            LEFT JOIN `iksgcp.iks_dwh_gia.main_encounter` c
-                ON CAST(a.Person_id AS STRING) = CAST(c.Person_Number AS STRING)
-               AND CAST(a.Enc_nbr AS STRING) = CAST(c.Encounter_Number AS STRING)
-               AND DATE(a.Last_bill_date) = DATE(c.Last_Bill_Date)
-            WHERE a.Last_bill_date IS NOT NULL
-              AND DATE(a.Last_bill_date) >= DATE_SUB(CURRENT_DATE(), INTERVAL 45 DAY)
-              AND DATE(a.Last_bill_date) <= CURRENT_DATE()
-              {payer_filter_sql}
-              {encounter_filter_sql}
-              AND NOT EXISTS (
-                  SELECT 1
-                  FROM `iksgcp.iks_dwh_gia.T_Dwh_Transactions` b
-                  WHERE CAST(a.Person_id AS STRING) = CAST(b.Person_ID AS STRING)
-                    AND CAST(a.Enc_nbr AS STRING) = CAST(b.Source_Number AS STRING)
-                    AND (
-                         DATE(b.Tran_Date) > DATE(a.Last_bill_date)
-                      OR DATE(b.Closing_Date) > DATE(a.Last_bill_date)
-                    )
-              )
-            QUALIFY ROW_NUMBER() OVER (
-                PARTITION BY CAST(a.Person_id AS STRING), CAST(a.Enc_nbr AS STRING), DATE(a.Last_bill_date)
-                ORDER BY a.Modify_timestamp DESC
-            ) = 1
+                CAST(Encounter_Number AS STRING) AS encounter_number,
+                CAST(Person_Number AS STRING) AS person_number,
+                SAFE_CAST(Responsible_Entity AS INT64) AS responsible_entity,
+                Payer_Name,
+                Payer_Subgrouping,
+                Payer_Subgrouping_2,
+                Financial_Class,
+                Financial_Class_2,
+                DATE(Last_bill_date) AS Last_bill_date
+            FROM `iksgcp.iks_dwh_gia.main_encounter`
+            QUALIFY ROW_NUMBER() OVER(PARTITION BY CAST(Encounter_Number AS STRING) ORDER BY Last_bill_date DESC) = 1
+        ),
+        npnr_detail_base AS (
+            SELECT
+                COALESCE(m.person_number, a.person_number) AS person_id,
+                a.encounter_number,
+                COALESCE(m.Last_bill_date, a.last_bill_date) AS last_bill_date,
+                a.balance AS amount,
+                COALESCE(m.responsible_entity, 0) AS responsible_entity,
+                a.payer_id,
+                COALESCE(NULLIF(m.Payer_Name, ''), NULLIF(a.ar_payer_name, ''), 'Unknown') AS payer_name,
+                m.Payer_Subgrouping AS payer_subgrouping,
+                m.Payer_Subgrouping_2 AS payer_subgrouping_2,
+                m.Financial_Class AS financial_class,
+                m.Financial_Class_2 AS financial_class_2,
+                DATE_DIFF(CURRENT_DATE(), COALESCE(m.Last_bill_date, a.last_bill_date), DAY) AS claim_age_in_days,
+                DATE(a.last_activity_date) AS last_activity_date,
+                a.last_status_code,
+                a.last_action_code
+            FROM scoped_ar a
+            LEFT JOIN main_enc m ON a.encounter_number = m.encounter_number
+            LEFT JOIN latest_output lo
+              ON lo.encounter_number = a.encounter_number
+             AND lo.row_num = 1
+            WHERE COALESCE(m.Last_bill_date, a.last_bill_date) IS NOT NULL
+              AND COALESCE(a.last_payment_date, lo.response_post_date) IS NULL
+              AND COALESCE(m.Last_bill_date, a.last_bill_date) < DATE_SUB(CURRENT_DATE(), INTERVAL {WORKPLAN_LOOKBACK_DAYS} DAY)
+              AND (a.last_activity_date IS NULL OR DATE(a.last_activity_date) < DATE_SUB(CURRENT_DATE(), INTERVAL {WORKPLAN_LOOKBACK_DAYS} DAY))
+              AND COALESCE(lo.pp_actual_flag, 0) != 1
+              {month_filter_sql}
         )
-    """
-
-    search_sql = search.replace("'", "''")
-    filters = []
-    if entity_value is not None:
-        filters.append(f"responsible_entity = {entity_value}")
-    if search_sql:
-        filters.append(f"""
-            (
-                CONTAINS_SUBSTR(LOWER(COALESCE(encounter_number, '')), '{search_sql}')
-                OR CONTAINS_SUBSTR(LOWER(COALESCE(person_id, '')), '{search_sql}')
-                OR CONTAINS_SUBSTR(LOWER(COALESCE(payer_name, '')), '{search_sql}')
-                OR CONTAINS_SUBSTR(LOWER(COALESCE(payer_subgrouping, '')), '{search_sql}')
-                OR CONTAINS_SUBSTR(LOWER(COALESCE(payer_subgrouping_2, '')), '{search_sql}')
-                OR CONTAINS_SUBSTR(LOWER(COALESCE(financial_class, '')), '{search_sql}')
-                OR CONTAINS_SUBSTR(LOWER(COALESCE(financial_class_2, '')), '{search_sql}')
-            )
-        """.strip())
-    filtered_where_clause = f"WHERE {' AND '.join(filters)}" if filters else ""
-
-    valid_sort_cols = {
-        "encounter_number": "encounter_number",
-        "payer_name": "payer_name",
-        "payer_subgrouping": "payer_subgrouping",
-        "financial_class": "financial_class",
-        "responsible_entity": "responsible_entity",
-        "last_bill_date": "last_bill_date",
-        "claim_age_in_days": "claim_age_in_days",
-        "amount": "amount",
-    }
-    sort_col = valid_sort_cols.get(sort_by, "claim_age_in_days")
-    sort_dir = "ASC" if sort_order == "asc" else "DESC"
-    offset = (page - 1) * per_page
-
-    summary_sql = f"""
-        {base_detail_cte}
-        SELECT
-            COUNT(*) AS total_claims,
-            COUNT(DISTINCT CONCAT(COALESCE(payer_name, ''), '|', COALESCE(payer_subgrouping, ''), '|', COALESCE(payer_subgrouping_2, ''), '|', COALESCE(financial_class, ''), '|', COALESCE(financial_class_2, ''), '|', CAST(responsible_entity AS STRING))) AS total_grouped_rows,
-            COUNT(DISTINCT NULLIF(payer_name, 'Unknown')) AS unique_payers,
-            COUNT(DISTINCT NULLIF(payer_subgrouping, 'Unknown')) AS unique_payer_subgroupings,
-            COUNT(DISTINCT NULLIF(financial_class, 'Unknown')) AS unique_financial_classes,
-            COUNT(DISTINCT CASE WHEN responsible_entity > 0 THEN responsible_entity END) AS entity_count,
-            ROUND(SUM(amount), 2) AS total_amount,
-            ROUND(AVG(claim_age_in_days), 1) AS avg_claim_age_days
-        FROM npnr_live_detail
-        {filtered_where_clause}
-    """
-
-    entity_sql = f"""
-        {base_detail_cte}
-        SELECT
-            responsible_entity,
-            COUNT(*) AS claim_count,
-            COUNT(DISTINCT NULLIF(payer_name, 'Unknown')) AS unique_payers,
-            ROUND(SUM(amount), 2) AS total_amount
-        FROM npnr_live_detail
-        {filtered_where_clause}
-        GROUP BY responsible_entity
-        ORDER BY responsible_entity
     """
 
     records_sql = f"""
         {base_detail_cte}
-        SELECT
-            payer_name,
-            payer_subgrouping,
-            payer_subgrouping_2,
-            financial_class,
-            financial_class_2,
-            responsible_entity,
-            person_id,
-            encounter_number,
-            CAST(NULL AS STRING) AS enc_from_main_encounter,
-            last_bill_date,
-            amount,
-            claim_age_in_days,
-            CAST(NULL AS DATE) AS last_activity_date,
-            CAST(NULL AS STRING) AS last_status_code,
-            CAST(NULL AS STRING) AS last_action_code,
-            payer_id
-        FROM npnr_live_detail
-        {filtered_where_clause}
+        SELECT * FROM npnr_detail_base
+        ORDER BY last_bill_date DESC, amount DESC
     """
 
     client = _get_prod_bq_client() or _build_ar_bq_client()
-    if client is None:
-        return jsonify({
-            "error": "NPNR live detail unavailable",
-            "summary": {},
-            "by_entity": [],
-            "records": [],
-            "total_records": 0,
-            "total_pages": 0,
-            "page": 1,
-            "per_page": 0,
-        }), 200
-
     try:
-        summary_row = _run_snapshot_query(client, "npnr_live_summary", summary_sql)
-        entity_rows = list(client.query(entity_sql).result())
-        record_rows = _run_records_query_cached(client, records_sql, cache_seconds=120)
-        
-        # Calculate distinct Availity bucket unique_payers
-        dist_payer_sql = f"{base_detail_cte} SELECT DISTINCT NULLIF(payer_name, 'Unknown') AS p FROM npnr_live_detail {filtered_where_clause} WHERE payer_name IS NOT NULL"
-        dist_payer_rows = client.query(dist_payer_sql).result()
-        _mapped_set = set()
-        for r in dist_payer_rows:
-            if r.p:
-                _mapped_set.add(_NPNR_OPTIMIX_TO_AVAILITY.get(r.p, r.p))
-        mapped_unique_payers = len(_mapped_set)
-        
-    except Exception as exc:
-        logger.warning("NPNR live detail query failed: %s, using mock fallback", exc)
-        return jsonify({
-            "source": "live_bq_mock",
-            "as_of": datetime.now(timezone.utc).isoformat(),
-            "summary": {
-                "total_claims": 30399,
-                "unique_payers": 62,
-                "total_amount": 27000000.0,
-                "avg_claim_age_days": 84.1
-            },
-            "by_entity": [
-                {"responsible_entity": 1, "claim_count": 12000, "unique_payers": 40, "total_amount": 1000000.0},
-                {"responsible_entity": 2, "claim_count": 18399, "unique_payers": 22, "total_amount": 26000000.0}
-            ],
-            "records": [
-                {
-                    "person_id": "P-12345",
-                    "encounter_number": "ENC-001",
-                    "last_bill_date": "2024-01-15T00:00:00Z",
-                    "amount": 1500.00,
-                    "responsible_entity": 1,
-                    "payer_name": "Aetna",
-                    "payer_subgrouping": "Commercial",
-                    "financial_class": "HMO",
-                    "claim_age_in_days": 48
-                },
-                {
-                    "person_id": "P-67890",
-                    "encounter_number": "ENC-002",
-                    "last_bill_date": "2023-11-05T00:00:00Z",
-                    "amount": 2400.00,
-                    "responsible_entity": 2,
-                    "payer_name": "Cigna",
-                    "payer_subgrouping": "Medicare Advantage",
-                    "financial_class": "Medicare",
-                    "claim_age_in_days": 62
-                }
-            ],
-            "total_records": 30399,
-            "total_pages": 1,
-            "page": 1,
-            "per_page": 2,
-        }), 200
+        cache_seconds = 0 if force_refresh else 120
+        cache_key = f"npnr-data:{month or 'live'}:{phase or 'all'}:{'zero' if balance_zero else 'open'}"
+        grouped_payload = _get_npnr_grouped_payload_cached(
+            cache_key,
+            lambda: _build_npnr_grouped_payload(
+                list(_run_records_query_cached(client, records_sql, cache_seconds=cache_seconds))
+            ),
+            cache_seconds=cache_seconds,
+        )
 
-    total_records = int(getattr(summary_row, "total_grouped_rows", 0) or 0) if summary_row else 0
-    summary = {
-        "total_claims": int(getattr(summary_row, "total_claims", 0) or 0) if summary_row else 0,
-        "entity_count": int(getattr(summary_row, "entity_count", 0) or 0) if summary_row else 0,
-        "unique_payers": mapped_unique_payers,
-        "unique_payer_subgroupings": int(getattr(summary_row, "unique_payer_subgroupings", 0) or 0) if summary_row else 0,
-        "unique_financial_classes": int(getattr(summary_row, "unique_financial_classes", 0) or 0) if summary_row else 0,
-        "total_amount": round(float(getattr(summary_row, "total_amount", 0) or 0), 2) if summary_row else 0.0,
-        "avg_claim_age_days": round(float(getattr(summary_row, "avg_claim_age_days", 0) or 0), 1) if summary_row else 0.0,
-        "source": "live_bq",
-    }
+        records = list(grouped_payload["records"])
+        if entity_value is not None:
+            records = [record for record in records if int(record.get("responsible_entity") or 0) == entity_value]
+        if search:
+            needle = search.lower()
+            def _record_matches(record: Dict[str, Any]) -> bool:
+                fields = [
+                    record.get("person_id"),
+                    record.get("encounter_number"),
+                    record.get("payer_name"),
+                    record.get("payer_detail"),
+                    record.get("payer_subgrouping"),
+                    record.get("payer_subgrouping_2"),
+                    record.get("financial_class"),
+                    record.get("financial_class_2"),
+                ]
+                for child in record.get("encounters", []):
+                    fields.extend([
+                        child.get("encounter_number"),
+                        child.get("person_id"),
+                        child.get("payer_name"),
+                        child.get("payer_subgrouping"),
+                        child.get("financial_class"),
+                    ])
+                return any(needle in str(value or "").lower() for value in fields)
+            records = [record for record in records if _record_matches(record)]
 
-    entity_breakdown = [
-        {
-            "entity": int(row.responsible_entity or 0),
-            "entity_label": _entity_label(row.responsible_entity or 0),
-            "claim_count": int(row.claim_count or 0),
-            "unique_payers": int(row.unique_payers or 0),
-            "total_amount": round(float(row.total_amount or 0), 2),
+        sort_key_map = {
+            "payer_name": lambda item: str(item.get("payer_name") or "").lower(),
+            "count": lambda item: int(item.get("count") or 0),
+            "amount": lambda item: float(item.get("amount") or 0),
+            "claim_age_in_days": lambda item: float(item.get("claim_age_in_days") or 0),
+            "last_bill_date": lambda item: str(item.get("last_bill_date") or ""),
+            "avg_payment_days": lambda item: float(item.get("avg_payment_days") or -1),
+            "responsible_entity": lambda item: int(item.get("responsible_entity") or 0),
         }
-        for row in entity_rows
-    ]
+        records.sort(
+            key=sort_key_map.get(sort_by, sort_key_map["last_bill_date"]),
+            reverse=sort_order != "asc",
+        )
 
-    # Aggregate to top-level 322 mapped payers
-    payer_agg = {}
-    for row in record_rows:
-        parent = _NPNR_OPTIMIX_TO_AVAILITY.get(row.payer_name, row.payer_name) or "Unknown Payer"
-        if parent not in payer_agg:
-            payer_agg[parent] = {
-                "person_id": row.person_id,
-                "encounter_count": 0,
-                "amount": 0.0,
-                "sum_claim_age": 0,
-                "last_bill_date": None,
-                "responsible_entity": int(row.responsible_entity or 0),
-                "payer_id": row.payer_id,
-                "payer_name": parent,
-                "payer_detail": set(),
-                "payer_subgrouping": set(),
-                "payer_subgrouping_2": set(),
-                "financial_class": set(),
-                "financial_class_2": set(),
-                "last_activity_date": row.last_activity_date,
-                "last_status_code": row.last_status_code,
-                "last_action_code": row.last_action_code,
-                "encounters": []
-            }
-        
-        m = payer_agg[parent]
-        
-        m["encounters"].append({
-            "encounter_number": row.encounter_number,
-            "person_id": row.person_id,
-            "amount": float(row.amount or 0),
-            "claim_age_in_days": float(row.claim_age_in_days or 0),
-            "last_bill_date": row.last_bill_date.isoformat() if row.last_bill_date else None,
-            "financial_class": row.financial_class if row.financial_class else "Unknown",
-            "payer_subgrouping": row.payer_subgrouping if row.payer_subgrouping else "Unknown",
-            "payer_name": row.payer_name if row.payer_name else "Unknown"
-        })
-        
-        m["encounter_count"] += 1
-        m["amount"] += float(row.amount or 0)
-        m["sum_claim_age"] += float(row.claim_age_in_days or 0)
-        
-        if row.last_bill_date:
-            if not m["last_bill_date"] or row.last_bill_date > m["last_bill_date"]:
-                m["last_bill_date"] = row.last_bill_date
+        total_records = len(records)
+        total_pages = math.ceil(total_records / per_page) if per_page else 1
+        start = (page - 1) * per_page
+        paged_records = records[start:start + per_page]
 
-        if row.payer_name: m["payer_detail"].add(row.payer_name)
-        if row.payer_subgrouping: m["payer_subgrouping"].add(row.payer_subgrouping)
-        if row.payer_subgrouping_2: m["payer_subgrouping_2"].add(row.payer_subgrouping_2)
-        if row.financial_class: m["financial_class"].add(row.financial_class)
-        if row.financial_class_2: m["financial_class_2"].add(row.financial_class_2)
+        summary = dict(grouped_payload["summary"])
+        summary["total_grouped_rows"] = total_records
 
-    flattened = []
-    for parent, m in payer_agg.items():
-        avg_age = round(m["sum_claim_age"] / m["encounter_count"], 1) if m["encounter_count"] > 0 else 0
-        
-        # Resolve best known strings for inheritance
-        resolved_fin = ", ".join(sorted(x for x in m["financial_class"] if x and x != "Unknown"))
-        resolved_sub = ", ".join(sorted(x for x in m["payer_subgrouping"] if x and x != "Unknown"))
-        resolved_sub2 = ", ".join(sorted(x for x in m["payer_subgrouping_2"] if x and x != "Unknown"))
-        resolved_fin2 = ", ".join(sorted(x for x in m["financial_class_2"] if x and x != "Unknown"))
-        
-        # Payer name fallback inference for entirely missing metadata
-        if not resolved_fin and m["payer_name"] and m["payer_name"] != "Unknown":
-            p = str(m["payer_name"]).lower()
-            if any(x in p for x in ["medicare", "mcr", "advantage"]):
-                resolved_fin = "Medicare"
-            elif any(x in p for x in ["medicaid", "mcd", "chip", "star", "ahcccs"]):
-                resolved_fin = "Medicaid"
-            elif any(x in p for x in ["tricare", "va ", "champ", "veteran"]):
-                resolved_fin = "Government"
-            elif any(x in p for x in ["self pay", "uninsured", "indigent"]):
-                resolved_fin = "Self Pay"
-            elif any(x in p for x in ["bcbs", "blue", "aetna", "cigna", "united", "humana", "commercial", "health", "plan", "network", "benefits", "mutual", "care", "ppo", "hmo", "epo"]):
-                resolved_fin = "Commercial"
-                
-        if not resolved_sub and m["payer_name"] and m["payer_name"] != "Unknown":
-            resolved_sub = m["payer_name"]
-        
-        # Patch any missing child values using aggregated sibling strings
-        encounters = m["encounters"]
-        unknown_variants = {"unknown", "nan", "none", "null", "", "n/a"}
-        
-        for child in encounters:
-            f_val = str(child.get("financial_class") or "").strip().lower()
-            if (not f_val or f_val in unknown_variants) and resolved_fin:
-                child["financial_class"] = resolved_fin
-                
-            s_val = str(child.get("payer_subgrouping") or "").strip().lower()
-            if (not s_val or s_val in unknown_variants) and resolved_sub:
-                child["payer_subgrouping"] = resolved_sub
-                
-            p_val = str(child.get("payer_name") or "").strip().lower()
-            if (not p_val or p_val in unknown_variants):
-                child["payer_name"] = m["payer_name"]
-                
-        flattened.append({
-            "person_id": m["person_id"],
-            "encounter_number": f"{m['encounter_count']} Claims",
-            "count": m['encounter_count'],
-            "last_bill_date": m["last_bill_date"].isoformat() if m["last_bill_date"] is not None else None,
-            "amount": round(m["amount"], 2),
-            "responsible_entity": m["responsible_entity"],
-            "entity_label": _entity_label(m["responsible_entity"]),
-            "payer_id": m["payer_id"] if m["payer_id"] and m["payer_id"].lower() != "unknown" else "",
-            "payer_name": m["payer_name"] if m["payer_name"] and m["payer_name"].lower() != "unknown" else "",
-            "payer_detail": ", ".join(sorted(x for x in m["payer_detail"] if x and str(x).lower() not in unknown_variants)),
-            "payer_subgrouping": resolved_sub,
-            "payer_subgrouping_2": resolved_sub2,
-            "financial_class": resolved_fin,
-            "financial_class_2": resolved_fin2,
-            "claim_age_in_days": avg_age,
-            "last_activity_date": m["last_activity_date"].isoformat() if m["last_activity_date"] is not None else None,
-            "last_status_code": m["last_status_code"] if m["last_status_code"] and str(m["last_status_code"]).lower() not in unknown_variants else "",
-            "last_action_code": m["last_action_code"] if m["last_action_code"] and str(m["last_action_code"]).lower() not in unknown_variants else "",
-            "encounters": sorted(encounters, key=lambda k: k["amount"], reverse=True)[:500]
-        })
-
-    # Python sort (defaulting to descending by claim count or age depending on frontend request)
-    key_map = {
-        "encounter_number": lambda x: float(x["encounter_number"].split()[0]),
-        "amount": lambda x: x["amount"],
-        "claim_age_in_days": lambda x: x["claim_age_in_days"],
-        "last_bill_date": lambda x: x["last_bill_date"] or "",
-        "payer_name": lambda x: x["payer_name"].lower(),
-        "responsible_entity": lambda x: x["responsible_entity"],
-        "payer_subgrouping": lambda x: x["payer_subgrouping"].lower(),
-        "financial_class": lambda x: x["financial_class"].lower()
-    }
-    
-    sort_func = key_map.get(sort_col, key_map["claim_age_in_days"])
-    flattened.sort(key=sort_func, reverse=(sort_dir == "DESC"))
-
-    # Apply limits
-    total_grouped = len(flattened)
-    records = flattened[offset : offset + per_page]
-
-    total_records = total_grouped
-    summary["total_claims"] = total_grouped
-
-    return jsonify({
-        "summary": summary,
-        "by_entity": entity_breakdown,
-        "records": records,
-        "page": page,
-        "per_page": per_page,
-        "total_records": total_records,
-        "total_pages": max(1, -(-total_records // per_page)),
-    })
+        return jsonify({
+            "source": "live_bq",
+            "as_of": datetime.now(timezone.utc).isoformat(),
+            "summary": summary,
+            "by_entity": grouped_payload["by_entity"],
+            "records": paged_records,
+            "total_records": total_records,
+            "total_pages": total_pages,
+            "page": page,
+            "per_page": per_page,
+        }), 200
+    except Exception as exc:
+        logger.error("NPNR detail query failed: %s", exc)
+        return jsonify({"error": str(exc)}), 500
 
 
 # ── Workable Inventory Snapshot ─────────────────────────────────────────────
@@ -2918,8 +3445,15 @@ def api_workable_snapshot():
     Results are cached for CACHE_TTL_SECONDS to avoid repeated full-table scans.
     """
     phase = _normalize_phase_param(request.args.get("phase", "").strip())
+    month = request.args.get("month", "").strip()
     force_refresh = _request_refresh_requested()
-    cache_key = f"workable_snapshot:{phase or 'all'}"
+    if month:
+        try:
+            _month_bounds(month)
+        except Exception:
+            return jsonify({"error": "invalid period", "source": "none"}), 400
+
+    cache_key = f"workable_snapshot:{phase or 'all'}:{month or 'live'}"
     cached = _snapshot_cache.get(cache_key, {})
     if not force_refresh and cached.get("ts", 0) > time.time() - CACHE_TTL_SECONDS:
         return jsonify(cached["data"])
@@ -2934,6 +3468,49 @@ def api_workable_snapshot():
         "phase": phase or "All Phases",
         "errors": [],
     }
+
+    if month:
+        validated = _fetch_date_phase_workplan_metrics(client, phase, month, "day")
+        if validated is None:
+            return jsonify({
+                "error": "No date-phase snapshot data available for the selected month",
+                "source": DATE_PHASE_ANALYTICS_TABLE,
+            }), 404
+
+        summary = validated.get("summary", {})
+        predicted_rate = float(summary.get("predicted_payment_rate") or 0) / 100 if summary.get("predicted_payment_rate") is not None else None
+        actual_rate = float(summary.get("actual_payment_rate") or 0) / 100 if summary.get("actual_payment_rate") is not None else None
+        bias_ratio = float(summary.get("prediction_bias") or 0) if summary.get("prediction_bias") is not None else None
+
+        out = {
+            "source": DATE_PHASE_ANALYTICS_TABLE,
+            "as_of": validated.get("as_of_date"),
+            "phase": phase or "All Phases",
+            "month": month,
+            "errors": [],
+            "total_npnr": int(summary.get("total_npnr") or 0),
+            "total_denials": int(summary.get("total_denials") or 0),
+            "workable_inventory": int(summary.get("workable_inventory") or 0),
+            "pending_payer": int(summary.get("pending_payer_in_transit") or 0),
+            "resolved_paid_mtd": int(summary.get("resolved_paid_mtd") or 0),
+            "ar_backlog_amount": round(float(summary.get("ar_backlog") or 0), 2),
+            "action_rate": round(float(summary.get("action_rate_percent") or 0) / 100, 4),
+            "action_rate_date": validated.get("as_of_date"),
+            "avg_claim_age_days": int(round(float(summary.get("avg_aging_risk") or 0))) if summary.get("avg_aging_risk") is not None else None,
+            "denial_overturn_rate": round(float(summary.get("denial_overturn_rate") or 0) / 100, 4),
+            "prediction_bias": (
+                {
+                    "predicted_rate": predicted_rate,
+                    "actual_rate": actual_rate,
+                    "ratio": bias_ratio,
+                    "bias_pct": round((bias_ratio - 1.0) * 100, 2) if bias_ratio is not None else None,
+                }
+                if predicted_rate is not None and actual_rate is not None and bias_ratio is not None
+                else None
+            ),
+        }
+        _snapshot_cache[cache_key] = {"ts": time.time(), "data": out}
+        return jsonify(out)
 
     base_cte = _output_base_cte(phase)
     row = _run_snapshot_query(client, "workable_snapshot_output", f"""
@@ -3094,7 +3671,7 @@ def api_workable_snapshot():
 # Post_Date / PP_Post_Date, PredictionLabel, PP_PredictedFlag, PP_ActualFlag,
 # AccuracyFlag / PP_AccuracyFlag. Transaction dollars are joined separately from
 # iksgcp.iks_dwh_gia.T_Dwh_Transactions when needed.
-ITTT_PP_OUTPUT_TABLE = "iksdev.iks_dwh_gia.ITTT_PP_Output"
+ITTT_PP_OUTPUT_TABLE = os.getenv("OPTIMIX_IKS_OUTPUT_TABLE", "iksgcp.iks_dwh_gia.ITTT_PP_Output")
 
 _ops_flow_cache:      Dict[str, Any] = {}
 _ar_workable_cache:   Dict[str, Any] = {}
@@ -3181,8 +3758,14 @@ def _output_base_cte(phase: Optional[str], cte_name: str = "output_base") -> str
     """
 
 
-def _ar_workplan_base_cte(phase: Optional[str], cte_name: str = "ar_workplan_base") -> str:
+def _ar_workplan_base_cte(phase: Optional[str], cte_name: str = "ar_workplan_base", min_billed_date: Optional[str] = "2025-04-01", max_billed_date: Optional[str] = None) -> str:
     phase_clause = _phase_filter_sql(phase, "ar.Encounter_Number")
+    date_filter = ""
+    if min_billed_date:
+        date_filter += f" AND DATE(ar.Last_Bill_Date) >= '{min_billed_date}'"
+    if max_billed_date:
+        date_filter += f" AND DATE(ar.Last_Bill_Date) <= '{max_billed_date}'"
+
     return f"""
         WITH latest_output AS (
             SELECT
@@ -3235,6 +3818,7 @@ def _ar_workplan_base_cte(phase: Optional[str], cte_name: str = "ar_workplan_bas
                 ON lo.encounter_number = CAST(ar.Encounter_Number AS STRING)
                AND lo.row_num = 1
             WHERE SAFE_CAST(COALESCE(ar.Total_Balance, ar.Insurance_Balance, 0) AS FLOAT64) > 0
+              {date_filter}
               {phase_clause}
         )
     """
@@ -3263,6 +3847,7 @@ def _empty_ar_workable_payload(period: str, period_type: str, phase: Optional[st
         "matching_payment_predictions": 0,
         "total_billed_amount": 0.0,
         "total_received_amount": 0.0,
+        "workable_charged_amt": 0.0,
     }
 
 
@@ -3426,6 +4011,64 @@ def api_ar_workable():
         totals["daily"] = daily
         totals["total_billed_amount"] = round(totals["total_billed_amount"], 2)
         totals["total_received_amount"] = round(totals["total_received_amount"], 2)
+
+        fin_sql = f"""
+            WITH transaction_details AS (
+                SELECT
+                    Source_Number,
+                    Person_ID,
+                    DATE(Closing_Date) AS closing_date,
+                    AVG(CAST(Billed_Amt AS FLOAT64)) AS billed_amt,
+                    SUM(-1 * CAST(Total_Posted_Payments AS FLOAT64)) AS total_payments
+                FROM `iksgcp.iks_dwh_gia.T_Dwh_Transactions`
+                GROUP BY 1, 2, 3
+            ),
+            ar_data AS (
+                SELECT
+                    t3.Encounter_Number AS encounter_number,
+                    t3.Person_Number AS person_number,
+                    DATE(t3.Last_Bill_Date) AS last_bill_date,
+                    COALESCE(DATE(ittt_pp.Post_Date), ittt_pp.PP_Post_Date) AS post_date,
+                    SAFE.PARSE_DATE('%Y-%m-%d', ittt_pp.ITTT_Date) AS ittt_date,
+                    ittt_pp.ITTT_PredictionLabel AS ittt_prediction_label,
+                    ittt_pp.PP_ActualFlag AS pp_actual_flag
+                FROM `{AR_WORKFLOW_TABLE}` t3
+                INNER JOIN `{ITTT_PP_OUTPUT_TABLE}` ittt_pp
+                    ON t3.Encounter_Number = ittt_pp.Encounter_Number
+                   AND t3.Person_Number = ittt_pp.Person_ID
+                   AND DATE(t3.Last_Bill_Date) = DATE(ittt_pp.Last_bill_date)
+                LEFT JOIN transaction_details tr
+                    ON tr.Source_Number = ittt_pp.Encounter_Number
+                   AND tr.Person_ID = ittt_pp.Person_ID
+                   AND tr.closing_date = COALESCE(DATE(ittt_pp.Post_Date), ittt_pp.PP_Post_Date)
+                WHERE SAFE.PARSE_DATE('%Y-%m-%d', ittt_pp.ITTT_Date) IS NOT NULL
+                  {phase_clause}
+                QUALIFY ROW_NUMBER() OVER (
+                    PARTITION BY t3.Encounter_Number, t3.Person_Number
+                    ORDER BY t3.Last_Bill_Date DESC
+                ) = 1
+            ),
+            workable_encounters AS (
+                SELECT DISTINCT encounter_number
+                FROM ar_data
+                WHERE {scoped_predicate}
+                  AND (
+                       pp_actual_flag = 1
+                    OR (
+                        ittt_prediction_label = 'Third'
+                        AND post_date IS NULL
+                        AND last_bill_date <= DATE_SUB(CURRENT_DATE(), INTERVAL 37 DAY)
+                    )
+                  )
+            )
+            SELECT SUM(COALESCE(pe.Amt, 0)) AS workable_charged_amt
+            FROM `iksgcp.iks_dwh_gia.T_Dwh_Patient_Encounter` pe
+            INNER JOIN workable_encounters we
+                ON CAST(pe.Enc_nbr AS STRING) = we.encounter_number
+        """
+        fin_row = _run_snapshot_query(client, "ar_workable_financial", fin_sql)
+        if fin_row:
+            totals["workable_charged_amt"] = float(fin_row.workable_charged_amt or 0)
 
         response = jsonify(totals)
         response.headers["Cache-Control"] = "no-store, no-cache, max-age=0, must-revalidate"
@@ -3676,7 +4319,35 @@ def api_ittt_aging():
                 "color":          color,
             })
 
-        result = {"buckets": buckets, "period": date or month}
+        touch_sql = f"""
+            {_ar_workplan_base_cte(phase)}
+            SELECT
+                CASE
+                    WHEN number_of_touches = 1 THEN '1 touch'
+                    WHEN number_of_touches = 2 THEN '2 touches'
+                    WHEN number_of_touches = 3 THEN '3 touches'
+                    ELSE '3+ touches'
+                END AS label,
+                COUNT(DISTINCT Encounter_Number) AS bucket_count
+            FROM ar_workplan_base
+            WHERE {period_predicate} AND number_of_touches > 0
+            GROUP BY label
+        """
+        touch_rows = list(client.query(touch_sql).result())
+        total_touch_count = sum(int(r.bucket_count) for r in touch_rows)
+        touch_colors = {'1 touch':'#10b981', '2 touches':'#00c49a', '3 touches':'#f59e0b', '3+ touches':'#ef4444'}
+        touch_dist = []
+        for r in touch_rows:
+            c = int(r.bucket_count)
+            touch_dist.append({
+                "label": r.label,
+                "pct": round(c / total_touch_count, 4) if total_touch_count else 0,
+                "color": touch_colors.get(r.label, '#ef4444')
+            })
+        order_map = {'1 touch': 1, '2 touches': 2, '3 touches': 3, '3+ touches': 4}
+        touch_dist.sort(key=lambda x: order_map.get(x['label'], 5))
+
+        result = {"buckets": buckets, "touch_distribution": touch_dist, "period": date or month}
         _aging_cache[cache_key] = {"ts": time.time(), "data": result}
         return jsonify(result)
 
@@ -4082,10 +4753,19 @@ def api_ar_workplan():
     future_period_predicate = _ittt_period_predicate(month, "", field="ittt_date")
     if month and not future_period_predicate:
         return jsonify({"error": "invalid period"}), 400
+
+    # Granularity for the trend graph
+    granularity = request.args.get("granularity", "day").strip().lower()
+    if granularity not in ["day", "week", "month", "quarter", "year"]:
+        granularity = "day"
+
     future_scope = future_period_predicate or "ittt_date >= CURRENT_DATE()"
 
     reporting_month_key = month or datetime.now(timezone.utc).strftime("%Y-%m")
     current_month_start, current_month_end = _month_bounds(reporting_month_key)
+    # The billing window starts from April 2025 and ends at the selected month end
+    max_bill_date = current_month_end
+
     baseline_start_key = _shift_month_key(reporting_month_key, -3)
     baseline_end_key = _shift_month_key(reporting_month_key, -1)
     baseline_month_start, _ = _month_bounds(baseline_start_key)
@@ -4093,46 +4773,33 @@ def api_ar_workplan():
     current_window_label = _month_label(reporting_month_key)
     baseline_window_label = _month_range_label(baseline_start_key, baseline_end_key)
     worked_total_condition = "(last_activity_date IS NOT NULL OR number_of_touches > 0)"
-    worked_last_45_condition = "(last_activity_date IS NOT NULL AND last_activity_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 45 DAY))"
-    workplan_condition = f"NOT {worked_last_45_condition}"
-    transaction_missing_condition = "COALESCE(last_payment_date, response_post_date) IS NULL"
-    today_denials_condition = f"""
+    workplan_logic = _workplan_logic_sql()
+    worked_last_45_condition = workplan_logic["worked_last_window"]
+    workplan_condition = workplan_logic["workplan_condition"]
+    npnr_summary_condition = workplan_logic["npnr_condition"]
+
+    # Today/Later split based on last_bill_date
+    latest_workplan_bill_date = f"(SELECT MAX(last_bill_date) FROM ar_workplan_base WHERE {workplan_condition})"
+    today_condition = f"""
                 {workplan_condition}
+                 AND last_bill_date = {latest_workplan_bill_date}
+    """.strip()
+    today_denials_condition = f"""
+                {today_condition}
                  AND COALESCE(pp_actual_flag, 0) = 1
     """.strip()
-    npnr_summary_condition = f"""
-                {workplan_condition}
-                 AND {transaction_missing_condition}
-                 AND last_bill_date IS NOT NULL
-                 AND last_bill_date < DATE_SUB(CURRENT_DATE(), INTERVAL 45 DAY)
-                 AND COALESCE(pp_actual_flag, 0) != 1
+    npnr_today_condition = f"""
+                {npnr_summary_condition}
+                 AND last_bill_date = {latest_workplan_bill_date}
     """.strip()
     later_workplan_condition = f"""
                 {workplan_condition}
-                 AND COALESCE(pp_actual_flag, 0) != 1
-                 AND NOT (
-                        {transaction_missing_condition}
-                    AND last_bill_date IS NOT NULL
-                    AND last_bill_date < DATE_SUB(CURRENT_DATE(), INTERVAL 45 DAY)
-                 )
+                 AND last_bill_date < {latest_workplan_bill_date}
     """.strip()
-    npnr_condition = """
-                is_ittt_available = 1
-                 AND response_post_date IS NULL
-                 AND last_bill_date IS NOT NULL
-                 AND last_bill_date <= DATE_SUB(CURRENT_DATE(), INTERVAL 37 DAY)
-    """.strip()
-    future_pending_condition = f"""
-                {future_scope}
-                 AND ittt_date > CURRENT_DATE()
-                 AND response_post_date IS NULL
-    """.strip()
-    future_later_condition = f"""
-                {future_pending_condition}
-                 AND NOT ({npnr_condition})
-    """.strip()
+    # Define future condition for later buckets
+    future_later_condition = f"({workplan_condition} AND ({future_scope}))"
 
-    cache_key = f"ar_workplan:{month or 'live'}:{phase or 'all'}"
+    cache_key = f"ar_workplan:{month or 'live'}:{phase or 'all'}:{granularity}"
     cached = _workplan_cache.get(cache_key, {})
     if not force_refresh and cached.get("ts", 0) > time.time() - CACHE_TTL_SECONDS:
         return jsonify(cached["data"])
@@ -4142,46 +4809,35 @@ def api_ar_workplan():
         return jsonify({"error": "bq_unavailable"}), 503
 
     summary_sql = f"""
-        {_ar_workplan_base_cte(phase)}
+        {_ar_workplan_base_cte(phase, max_billed_date=max_bill_date)}
         SELECT
             COUNT(DISTINCT encounter_number) AS total_ar_claims,
+            COUNT(DISTINCT encounter_number) AS unique_count,
             ROUND(SUM(balance), 2) AS total_ar_balance,
-            COUNT(DISTINCT CASE
-                WHEN {worked_total_condition}
-                THEN encounter_number END) AS worked_total_count,
-            COUNT(DISTINCT CASE
-                WHEN {worked_last_45_condition}
-                THEN encounter_number END) AS worked_last_45_count,
-            COUNT(DISTINCT CASE
-                WHEN {workplan_condition}
-                THEN encounter_number END) AS workplan_total_count,
-            ROUND(SUM(CASE
-                WHEN {workplan_condition}
-                THEN balance ELSE 0 END), 2) AS workplan_total_balance,
-            COUNT(DISTINCT CASE
-                WHEN {npnr_summary_condition}
-                THEN encounter_number END) AS npnr_total_count,
-            ROUND(SUM(CASE
-                WHEN {npnr_summary_condition}
-                THEN balance ELSE 0 END), 2) AS npnr_total_balance,
-            COUNT(DISTINCT CASE
-                WHEN {later_workplan_condition}
-                THEN encounter_number END) AS later_workplan_count,
-            ROUND(SUM(CASE
-                WHEN {later_workplan_condition}
-                THEN balance ELSE 0 END), 2) AS later_workplan_balance,
-            COUNT(DISTINCT CASE
-                WHEN {today_denials_condition}
-                THEN encounter_number END) AS denials_today,
-            ROUND(SUM(CASE
-                WHEN {today_denials_condition}
-                THEN balance ELSE 0 END), 2) AS denials_balance,
-            COUNT(DISTINCT CASE
-                WHEN {npnr_summary_condition}
-                THEN encounter_number END) AS npnr_today,
-            ROUND(SUM(CASE
-                WHEN {npnr_summary_condition}
-                THEN balance ELSE 0 END), 2) AS npnr_balance,
+            COUNT(DISTINCT CASE WHEN {workplan_condition} THEN encounter_number END) AS workplan_total_count,
+            ROUND(SUM(CASE WHEN {workplan_condition} THEN balance ELSE 0 END), 2) AS workplan_total_balance,
+            COUNT(DISTINCT CASE WHEN {today_condition} THEN encounter_number END) AS workable_today_count,
+            ROUND(SUM(CASE WHEN {today_condition} THEN balance ELSE 0 END), 2) AS workable_today_balance,
+            COUNT(DISTINCT CASE WHEN {today_denials_condition} THEN encounter_number END) AS denials_today,
+            ROUND(SUM(CASE WHEN {today_denials_condition} THEN balance ELSE 0 END), 2) AS denials_balance,
+            COUNT(DISTINCT CASE WHEN {npnr_today_condition} THEN encounter_number END) AS npnr_today,
+            ROUND(SUM(CASE WHEN {npnr_today_condition} THEN balance ELSE 0 END), 2) AS npnr_balance,
+            COUNT(DISTINCT CASE WHEN {later_workplan_condition} THEN encounter_number END) AS workable_later_count,
+            ROUND(SUM(CASE WHEN {later_workplan_condition} THEN balance ELSE 0 END), 2) AS workable_later_balance,
+            COUNT(DISTINCT CASE WHEN {npnr_summary_condition} THEN encounter_number END) AS npnr_total_count,
+            ROUND(SUM(CASE WHEN {npnr_summary_condition} THEN balance ELSE 0 END), 2) AS npnr_total_balance,
+            COUNT(DISTINCT CASE WHEN {worked_total_condition} THEN encounter_number END) AS worked_total_count,
+            ROUND(SUM(CASE WHEN {worked_total_condition} THEN balance ELSE 0 END), 2) AS worked_total_balance,
+            COUNT(DISTINCT CASE WHEN {worked_last_45_condition} THEN encounter_number END) AS worked_last_45_count,
+            ROUND(SUM(CASE WHEN {worked_last_45_condition} THEN balance ELSE 0 END), 2) AS worked_45d_balance,
+            COUNT(DISTINCT CASE WHEN NOT {worked_total_condition} THEN encounter_number END) AS not_worked_count,
+            ROUND(SUM(CASE WHEN NOT {worked_total_condition} THEN balance ELSE 0 END), 2) AS not_worked_balance,
+            COUNT(DISTINCT CASE WHEN last_bill_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR) OR last_bill_date IS NULL THEN encounter_number END) AS ar_less_than_1_year,
+            COUNT(DISTINCT CASE WHEN last_bill_date < DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR) THEN encounter_number END) AS ar_greater_than_1_year,
+            COUNT(DISTINCT CASE WHEN pp_predicted_flag = 'Payment' THEN encounter_number END) AS ar_predicted_to_pay,
+            COUNT(DISTINCT CASE WHEN pp_predicted_flag = 'Denial' THEN encounter_number END) AS ar_predicted_to_deny,
+            COUNT(DISTINCT CASE WHEN COALESCE(pp_predicted_flag, '') NOT IN ('Payment', 'Denial') THEN encounter_number END) AS unclassified_open_ar,
+            ROUND(SUM(CASE WHEN COALESCE(pp_predicted_flag, '') NOT IN ('Payment', 'Denial') THEN balance ELSE 0 END), 2) AS unclassified_open_ar_balance,
             COUNT(DISTINCT CASE
                 WHEN {future_later_condition}
                 THEN encounter_number END) AS future_total_count,
@@ -4203,8 +4859,185 @@ def api_ar_workplan():
             MAX(CASE
                 WHEN {future_later_condition}
                 THEN ittt_date
-            END) AS future_last_ittt_date
+            END) AS future_last_ittt_date,
+            COUNT(DISTINCT CASE
+                WHEN {workplan_condition}
+                 AND ittt_date = CURRENT_DATE()
+                THEN encounter_number END) AS cadence_day_count,
+            ROUND(SUM(CASE
+                WHEN {workplan_condition}
+                 AND ittt_date = CURRENT_DATE()
+                THEN balance ELSE 0 END), 2) AS cadence_day_balance,
+            COUNT(DISTINCT CASE
+                WHEN {workplan_condition}
+                 AND DATE_TRUNC(ittt_date, WEEK(MONDAY)) = DATE_TRUNC(CURRENT_DATE(), WEEK(MONDAY))
+                THEN encounter_number END) AS cadence_week_count,
+            ROUND(SUM(CASE
+                WHEN {workplan_condition}
+                 AND DATE_TRUNC(ittt_date, WEEK(MONDAY)) = DATE_TRUNC(CURRENT_DATE(), WEEK(MONDAY))
+                THEN balance ELSE 0 END), 2) AS cadence_week_balance,
+            COUNT(DISTINCT CASE
+                WHEN {workplan_condition}
+                 AND DATE_TRUNC(ittt_date, MONTH) = DATE_TRUNC(CURRENT_DATE(), MONTH)
+                THEN encounter_number END) AS cadence_month_count,
+            ROUND(SUM(CASE
+                WHEN {workplan_condition}
+                 AND DATE_TRUNC(ittt_date, MONTH) = DATE_TRUNC(CURRENT_DATE(), MONTH)
+                THEN balance ELSE 0 END), 2) AS cadence_month_balance,
+            COUNT(DISTINCT CASE
+                WHEN {workplan_condition}
+                 AND DATE_TRUNC(ittt_date, QUARTER) = DATE_TRUNC(CURRENT_DATE(), QUARTER)
+                THEN encounter_number END) AS cadence_quarter_count,
+            ROUND(SUM(CASE
+                WHEN {workplan_condition}
+                 AND DATE_TRUNC(ittt_date, QUARTER) = DATE_TRUNC(CURRENT_DATE(), QUARTER)
+                THEN balance ELSE 0 END), 2) AS cadence_quarter_balance,
+            COUNT(DISTINCT CASE
+                WHEN {workplan_condition}
+                 AND DATE_TRUNC(ittt_date, YEAR) = DATE_TRUNC(CURRENT_DATE(), YEAR)
+                THEN encounter_number END) AS cadence_year_count,
+            ROUND(SUM(CASE
+                WHEN {workplan_condition}
+                 AND DATE_TRUNC(ittt_date, YEAR) = DATE_TRUNC(CURRENT_DATE(), YEAR)
+                THEN balance ELSE 0 END), 2) AS cadence_year_balance,
+            COUNT(DISTINCT CASE
+                WHEN {workplan_condition}
+                 AND ittt_date = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+                THEN encounter_number END) AS cadence_day_count_prev,
+            COUNT(DISTINCT CASE
+                WHEN {workplan_condition}
+                 AND DATE_TRUNC(ittt_date, WEEK(MONDAY)) = DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 1 WEEK), WEEK(MONDAY))
+                THEN encounter_number END) AS cadence_week_count_prev,
+            COUNT(DISTINCT CASE
+                WHEN {workplan_condition}
+                 AND DATE_TRUNC(ittt_date, MONTH) = DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH), MONTH)
+                THEN encounter_number END) AS cadence_month_count_prev,
+            COUNT(DISTINCT CASE
+                WHEN {workplan_condition}
+                 AND DATE_TRUNC(ittt_date, QUARTER) = DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 1 QUARTER), QUARTER)
+                THEN encounter_number END) AS cadence_quarter_count_prev,
+            COUNT(DISTINCT CASE
+                WHEN {workplan_condition}
+                 AND DATE_TRUNC(ittt_date, YEAR) = DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR), YEAR)
+                THEN encounter_number END) AS cadence_year_count_prev
         FROM ar_workplan_base
+    """
+
+    overview_phase_clause_ar = _phase_filter_sql(phase, "Encounter_Number")
+    overview_phase_clause_pred = _phase_filter_sql(phase, "Encounter_Number")
+    overview_sql = f"""
+        WITH ar_dedup AS (
+            SELECT
+                TRIM(CAST(Encounter_Number AS STRING)) AS encounter_number,
+                MAX(Total_Balance) AS total_balance,
+                MAX(CAST(Payer_Id AS STRING)) AS payer_id,
+                MAX(Encounter_Age) AS encounter_age,
+                MAX(IFNULL(Is_Touched, 0)) AS is_touched,
+                MAX(IFNULL(Number_Of_Touches, 0)) AS number_of_touches,
+                MAX(last_Activity_Date) AS last_activity_date
+            FROM `iksgcp.iks_dwh_gia.main_ar_workflow`
+            WHERE 1 = 1
+              {overview_phase_clause_ar}
+            GROUP BY 1
+        ),
+        total_ar AS (
+            SELECT *
+            FROM ar_dedup
+        ),
+        open_ar AS (
+            SELECT *
+            FROM total_ar
+            WHERE total_balance > 0
+              AND payer_id IS NOT NULL
+              AND TRIM(payer_id) != ''
+              AND TRIM(payer_id) != '0'
+        ),
+        pred_dedup AS (
+            SELECT
+                TRIM(CAST(Encounter_Number AS STRING)) AS encounter_number,
+                MAX(TRIM(CAST(PredictedFlag AS STRING))) AS predicted_flag,
+                MAX(SAFE_CAST(AccuracyFlag AS INT64)) AS accuracy_flag
+            FROM `iksgcp.iks_dwh_gia.Denial_Prediction_Encounter_Data`
+            WHERE 1 = 1
+              {overview_phase_clause_pred}
+            GROUP BY 1
+        ),
+        final_classification AS (
+            SELECT
+                o.encounter_number,
+                o.total_balance,
+                o.encounter_age,
+                o.is_touched,
+                o.number_of_touches,
+                o.last_activity_date,
+                p.predicted_flag,
+                p.accuracy_flag,
+                CASE
+                    WHEN o.encounter_age > 365 THEN '> 1 Yr'
+                    ELSE '<= 1 Yr'
+                END AS age_bucket,
+                CASE
+                    WHEN o.is_touched = 1
+                      OR o.number_of_touches > 0
+                      OR o.last_activity_date IS NOT NULL
+                    THEN 'Worked'
+                    ELSE 'Not Worked'
+                END AS worked_status,
+                CASE
+                    WHEN o.is_touched = 1
+                      OR o.number_of_touches > 0
+                      OR o.last_activity_date IS NOT NULL
+                    THEN CASE
+                        WHEN o.last_activity_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 45 DAY)
+                        THEN 'Worked in last 45 days'
+                        ELSE 'Worked > 45 days'
+                    END
+                    ELSE 'Not Worked'
+                END AS worked_45d_bucket,
+                CASE
+                    WHEN UPPER(p.predicted_flag) = 'PAYMENT' THEN 'propensity_to_pay'
+                    WHEN UPPER(p.predicted_flag) = 'DENIAL' THEN 'propensity_to_deny'
+                    ELSE 'unclassified_open_ar'
+                END AS propensity_bucket
+            FROM open_ar o
+            LEFT JOIN pred_dedup p
+              ON o.encounter_number = p.encounter_number
+        )
+        SELECT
+            (SELECT COUNT(*) FROM total_ar) AS total_ar_encounters,
+            (SELECT COUNT(*) FROM open_ar) AS total_open_ar,
+            ROUND((SELECT SUM(total_balance) FROM open_ar), 2) AS total_open_ar_balance,
+            COUNTIF(age_bucket = '<= 1 Yr') AS less_than_1yr,
+            COUNTIF(age_bucket = '> 1 Yr') AS greater_than_1yr,
+            COUNTIF(worked_status = 'Worked') AS worked,
+            ROUND(SUM(CASE WHEN worked_status = 'Worked' THEN total_balance ELSE 0 END), 2) AS worked_balance,
+            COUNTIF(worked_status = 'Not Worked') AS not_worked,
+            ROUND(SUM(CASE WHEN worked_status = 'Not Worked' THEN total_balance ELSE 0 END), 2) AS not_worked_balance,
+            COUNTIF(worked_45d_bucket = 'Worked in last 45 days') AS worked_last_45_days,
+            ROUND(SUM(CASE WHEN worked_45d_bucket = 'Worked in last 45 days' THEN total_balance ELSE 0 END), 2) AS worked_last_45_days_balance,
+            COUNTIF(worked_45d_bucket = 'Worked > 45 days') AS worked_more_than_45_days,
+            ROUND(SUM(CASE WHEN worked_45d_bucket = 'Worked > 45 days' THEN total_balance ELSE 0 END), 2) AS worked_more_than_45_days_balance,
+            COUNTIF(propensity_bucket = 'propensity_to_pay') AS propensity_to_pay,
+            COUNTIF(propensity_bucket = 'propensity_to_deny') AS propensity_to_deny,
+            COUNTIF(propensity_bucket = 'unclassified_open_ar') AS unclassified_open_ar,
+            ROUND(SUM(CASE WHEN propensity_bucket = 'unclassified_open_ar' THEN total_balance ELSE 0 END), 2) AS unclassified_open_ar_balance
+        FROM final_classification
+    """
+
+    trend_sql = f"""
+        {_ar_workplan_base_cte(phase)}
+        SELECT
+            { 'COALESCE(ittt_date, response_post_date, last_bill_date)' if granularity == 'day' else
+              'DATE_TRUNC(COALESCE(ittt_date, response_post_date, last_bill_date), WEEK(MONDAY))' if granularity == 'week' else
+              'DATE_TRUNC(COALESCE(ittt_date, response_post_date, last_bill_date), MONTH)' if granularity == 'month' else
+              'DATE_TRUNC(COALESCE(ittt_date, response_post_date, last_bill_date), QUARTER)' if granularity == 'quarter' else
+              'DATE_TRUNC(COALESCE(ittt_date, response_post_date, last_bill_date), YEAR)' } AS period,
+            COUNT(DISTINCT CASE WHEN {workplan_condition} THEN encounter_number END) AS actionable_count,
+            ROUND(SUM(CASE WHEN {workplan_condition} THEN balance ELSE 0 END), 2) AS actionable_balance
+        FROM ar_workplan_base
+        WHERE {future_period_predicate if month else 'COALESCE(ittt_date, response_post_date, last_bill_date) BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 24 MONTH) AND DATE_ADD(CURRENT_DATE(), INTERVAL 6 MONTH)'}
+        GROUP BY period
+        ORDER BY period
     """
 
     payer_sql = f"""
@@ -4341,29 +5174,56 @@ def api_ar_workplan():
 
     denial_phase_clause = _phase_filter_sql(phase, "dp.Encounter_Number")
     denial_shift_sql = f"""
-        WITH normalized_denials AS (
+        {_ar_workplan_base_cte(phase, cte_name="denial_shift_base")},
+        denial_code_lookup AS (
+            SELECT encounter_number, denial_code
+            FROM (
+                SELECT
+                    CAST(dp.Encounter_Number AS STRING) AS encounter_number,
+                    COALESCE(
+                        NULLIF(
+                            SPLIT(COALESCE(NULLIF(dp.Denial_Codes, ''), 'Unknown'), '|')[SAFE_OFFSET(0)],
+                            'Unknown'
+                        ),
+                        'Unknown'
+                    ) AS denial_code,
+                    DATE(dp.Post_Date) AS post_date,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY CAST(dp.Encounter_Number AS STRING)
+                        ORDER BY DATE(dp.Post_Date) DESC, COALESCE(dp.Denial_Codes, '') DESC
+                    ) AS row_num
+                FROM `iksgcp.iks_dwh_gia.Denial_Prediction_Encounter_Data` dp
+                WHERE dp.ActualFlag = 1
+                  AND DATE(dp.Post_Date) BETWEEN DATE '{baseline_month_start}' AND DATE '{current_month_end}'
+                  {denial_phase_clause}
+            )
+            WHERE row_num = 1
+        ),
+        normalized_denials AS (
             SELECT
-                DATE(dp.Post_Date) AS post_date,
-                NULLIF(
-                    SPLIT(COALESCE(NULLIF(dp.Denial_Codes, ''), 'Unknown'), '|')[SAFE_OFFSET(0)],
-                    'Unknown'
-                ) AS denial_code,
-                CAST(dp.Encounter_Number AS STRING) AS encounter_number
-            FROM `iksgcp.iks_dwh_gia.Denial_Prediction_Encounter_Data` dp
-            WHERE dp.ActualFlag = 1
-              AND DATE(dp.Post_Date) BETWEEN DATE '{baseline_month_start}' AND DATE '{current_month_end}'
-              {denial_phase_clause}
+                CASE
+                    WHEN base.ittt_date BETWEEN DATE '{current_month_start}' AND DATE '{current_month_end}' THEN 'current'
+                    WHEN base.ittt_date BETWEEN DATE '{baseline_month_start}' AND DATE '{baseline_month_end}' THEN 'baseline'
+                END AS period_name,
+                COALESCE(code_lookup.denial_code, 'Unknown') AS denial_code,
+                base.encounter_number AS encounter_number
+            FROM denial_shift_base base
+            LEFT JOIN denial_code_lookup code_lookup
+                ON base.encounter_number = code_lookup.encounter_number
+            WHERE base.pp_actual_flag = 1
+              AND base.ittt_date IS NOT NULL
+              AND (
+                    base.ittt_date BETWEEN DATE '{current_month_start}' AND DATE '{current_month_end}'
+                 OR base.ittt_date BETWEEN DATE '{baseline_month_start}' AND DATE '{baseline_month_end}'
+              )
         ),
         denial_counts AS (
             SELECT
-                CASE
-                    WHEN post_date BETWEEN DATE '{current_month_start}' AND DATE '{current_month_end}' THEN 'current'
-                    WHEN post_date BETWEEN DATE '{baseline_month_start}' AND DATE '{baseline_month_end}' THEN 'baseline'
-                END AS period_name,
+                period_name,
                 denial_code,
                 COUNT(DISTINCT encounter_number) AS claim_count
             FROM normalized_denials
-            WHERE denial_code IS NOT NULL
+            WHERE period_name IS NOT NULL
             GROUP BY period_name, denial_code
         ),
         denial_totals AS (
@@ -4420,25 +5280,44 @@ def api_ar_workplan():
 
     try:
         summary_row = _run_snapshot_query(client, "ar_workplan_summary", summary_sql)
+        overview_row = _run_snapshot_query(client, "ar_workplan_overview", overview_sql)
         payer_rows = list(client.query(payer_sql).result())
         open_age_rows = list(client.query(open_age_sql).result())
         entry_mix_rows = list(client.query(entry_mix_sql).result())
         denial_shift_rows = list(client.query(denial_shift_sql).result())
 
-        total_ar_claims = int(getattr(summary_row, "total_ar_claims", 0) or 0)
-        total_ar_balance = float(getattr(summary_row, "total_ar_balance", 0) or 0)
-        worked_total_count = int(getattr(summary_row, "worked_total_count", 0) or 0)
-        worked_last_45_count = int(getattr(summary_row, "worked_last_45_count", 0) or 0)
-        workplan_total_count = int(getattr(summary_row, "workplan_total_count", 0) or 0)
-        workplan_total_balance = float(getattr(summary_row, "workplan_total_balance", 0) or 0)
+        summary_total_ar_claims = int(getattr(summary_row, "total_ar_claims", 0) or 0)
+        summary_total_ar_balance = float(getattr(summary_row, "total_ar_balance", 0) or 0)
+
+        # AR Overview left-panel numbers ALWAYS come from overview_row (user's SQL on main_ar_workflow).
+        # This ensures they match the reference SQL regardless of month filter.
+        # Month filter only affects TODAY/LATER cadence numbers (summary_row from ITTT system).
+        total_ar_encounters = int(getattr(overview_row, "total_ar_encounters", 0) or 0)
+        total_ar_claims = int(getattr(overview_row, "total_open_ar", summary_total_ar_claims) or 0)
+        total_ar_balance = float(getattr(overview_row, "total_open_ar_balance", summary_total_ar_balance) or 0)
+        worked_total_count = int(getattr(overview_row, "worked", 0) or 0)
+        worked_total_balance = float(getattr(overview_row, "worked_balance", 0) or 0)
+        worked_last_45_count = int(getattr(overview_row, "worked_last_45_days", 0) or 0)
+        worked_last_45_balance = float(getattr(overview_row, "worked_last_45_days_balance", 0) or 0)
+        worked_more_than_45_count = int(getattr(overview_row, "worked_more_than_45_days", 0) or 0)
+        worked_more_than_45_balance = float(getattr(overview_row, "worked_more_than_45_days_balance", 0) or 0)
+        not_worked_count = int(getattr(overview_row, "not_worked", 0) or 0)
+        not_worked_balance = float(getattr(overview_row, "not_worked_balance", 0) or 0)
+
+        # Work Plan = Open AR minus those worked in last 45 days
+        workplan_total_count = max(total_ar_claims - worked_last_45_count, 0)
+        workplan_total_balance = max(total_ar_balance - worked_last_45_balance, 0.0)
+
+        # TODAY/LATER/NPNR come from summary_row (ar_workplan_base / ITTT system), scoped by month when selected
         npnr_total_count = int(getattr(summary_row, "npnr_total_count", 0) or 0)
         npnr_total_balance = float(getattr(summary_row, "npnr_total_balance", 0) or 0)
-        later_workplan_count = int(getattr(summary_row, "later_workplan_count", 0) or 0)
-        later_workplan_balance = float(getattr(summary_row, "later_workplan_balance", 0) or 0)
         denials_today = int(getattr(summary_row, "denials_today", 0) or 0)
-        npnr_today = int(getattr(summary_row, "npnr_today", 0) or 0)
-        workable_today = denials_today + npnr_today
-        workable_today_balance = float(getattr(summary_row, "denials_balance", 0) or 0) + float(getattr(summary_row, "npnr_balance", 0) or 0)
+        denials_balance = float(getattr(summary_row, "denials_balance", 0) or 0)
+        npnr_today = npnr_total_count
+        npnr_balance = npnr_total_balance
+
+        workable_today = denials_today + npnr_total_count
+        workable_today_balance = float(denials_balance + npnr_total_balance)
         remaining_ar_count = max(workplan_total_count - workable_today, 0)
         remaining_ar_balance = max(workplan_total_balance - workable_today_balance, 0.0)
         age_bucket_labels = {
@@ -4509,6 +5388,11 @@ def api_ar_workplan():
         aging_current_share = round((aging_current_count / current_entry_total) * 100, 1) if current_entry_total else 0.0
         aging_baseline_share = round((aging_baseline_count / baseline_entry_total) * 100, 1) if baseline_entry_total else 0.0
 
+        fresh_delta = fresh_current_share - fresh_baseline_share
+        aging_delta = aging_current_share - aging_baseline_share
+        fresh_share = fresh_current_share
+        aging_share = aging_current_share
+
         denial_mix = []
         for row in denial_shift_rows:
             denial_mix.append({
@@ -4520,16 +5404,61 @@ def api_ar_workplan():
                 "delta_share_pct_points": round(float(row.delta_share_pct_points or 0), 2),
             })
 
-        current_top_reason = max(denial_mix, key=lambda item: (item["current_count"], item["current_share_pct"]), default=None)
-        baseline_top_reason = max(denial_mix, key=lambda item: (item["baseline_count"], item["baseline_share_pct"]), default=None)
+        unknown_denial_codes = {"", "unknown", "none", "null", "nan", "n/a"}
+        known_denial_mix = [
+            item for item in denial_mix
+            if str(item.get("code") or "").strip().lower() not in unknown_denial_codes
+        ]
+        missing_denial_code_item = next(
+            (
+                item for item in denial_mix
+                if str(item.get("code") or "").strip().lower() in unknown_denial_codes
+            ),
+            None,
+        )
+        missing_denial_code_summary = {
+            "code": "Unknown",
+            "current_count": int(missing_denial_code_item["current_count"]) if missing_denial_code_item else 0,
+            "current_share_pct": float(missing_denial_code_item["current_share_pct"]) if missing_denial_code_item else 0.0,
+            "baseline_count": int(missing_denial_code_item["baseline_count"]) if missing_denial_code_item else 0,
+            "baseline_share_pct": float(missing_denial_code_item["baseline_share_pct"]) if missing_denial_code_item else 0.0,
+            "reason": "Encounter has no matched posted denial code or Denial_Codes is blank in Denial_Prediction_Encounter_Data.",
+        }
+
+        trend_results = client.query(trend_sql).to_dataframe()
+        main_trend = []
+        for _, tr in trend_results.iterrows():
+            main_trend.append({
+                "period": str(tr.period),
+                "count": int(tr.actionable_count or 0),
+                "balance": float(tr.actionable_balance or 0),
+            })
+
+        current_denial_mix = [item for item in known_denial_mix if item["current_count"] > 0]
+        baseline_denial_mix = [item for item in known_denial_mix if item["baseline_count"] > 0]
+        current_top_reason = max(
+            current_denial_mix,
+            key=lambda item: (item["current_count"], item["current_share_pct"]),
+            default=None,
+        )
+        baseline_top_reason = max(
+            baseline_denial_mix,
+            key=lambda item: (item["baseline_count"], item["baseline_share_pct"]),
+            default=None,
+        )
         emergent_reason = max(
-            [item for item in denial_mix if item["current_count"] > 0],
+            [
+                item
+                for item in current_denial_mix
+                if item["delta_share_pct_points"] > 0
+            ],
             key=lambda item: (item["delta_share_pct_points"], item["current_count"]),
             default=None,
         )
+
         denial_rows = []
         for item in sorted(
-            [row for row in denial_mix if row["current_count"] > 0],
+            current_denial_mix,
             key=lambda row: (row["current_count"], row["delta_share_pct_points"]),
             reverse=True,
         )[:5]:
@@ -4552,24 +5481,96 @@ def api_ar_workplan():
                 "claims_pool": total_ar_claims,
                 "balance": round(total_ar_balance, 2),
             },
+            "trends": {
+                "freshness": {
+                    "baseline_window_label": baseline_window_label,
+                    "entry_mix": {
+                        "fresh_share_pct": round(fresh_share, 2),
+                        "aging_share_pct": round(aging_share, 2),
+                        "fresh_delta_pct_points": round(fresh_delta, 2),
+                        "aging_delta_pct_points": round(aging_delta, 2),
+                        "current_total": current_entry_total,
+                        "baseline_total": baseline_entry_total,
+                    },
+                    "open_buckets": open_buckets,
+                },
+                "denial_shift": {
+                    "baseline_window_label": baseline_window_label,
+                    "current_top_reason": current_top_reason,
+	                    "baseline_top_reason": baseline_top_reason,
+	                    "emergent_reason": emergent_reason,
+	                    "missing_code_summary": missing_denial_code_summary,
+	                    "rows": denial_rows,
+	                },
+                "main_trend": main_trend,
+                "granularity": granularity
+            },
             "summary": {
                 "ar_total_count": total_ar_claims,
+                "total_ar_encounters": total_ar_encounters,
+                "unique_count": int(getattr(summary_row, "unique_count", 0) or 0),
                 "ar_total_balance": round(total_ar_balance, 2),
                 "worked_total_count": worked_total_count,
+                "worked_total_balance": round(worked_total_balance, 2),
                 "worked_last_45_count": worked_last_45_count,
+                "worked_45d_balance": round(worked_last_45_balance, 2),
+                "worked_more_than_45_count": worked_more_than_45_count,
+                "worked_more_than_45_balance": round(worked_more_than_45_balance, 2),
+                "not_worked_count": not_worked_count,
+                "not_worked_balance": round(not_worked_balance, 2),
                 "workplan_total_count": workplan_total_count,
                 "workplan_total_balance": round(workplan_total_balance, 2),
                 "npnr_total_count": npnr_total_count,
                 "npnr_total_balance": round(npnr_total_balance, 2),
-                "later_workplan_count": later_workplan_count,
-                "later_workplan_balance": round(later_workplan_balance, 2),
+                "later_workplan_count": remaining_ar_count,
+                "later_workplan_balance": round(remaining_ar_balance, 2),
+                "ar_less_than_1_year": int(getattr(overview_row, "less_than_1yr", 0) or 0),
+                "ar_greater_than_1_year": int(getattr(overview_row, "greater_than_1yr", 0) or 0),
+                "ar_predicted_to_pay": int(getattr(overview_row, "propensity_to_pay", 0) or 0),
+                "ar_predicted_to_deny": int(getattr(overview_row, "propensity_to_deny", 0) or 0),
+                "unclassified_open_ar": int(getattr(overview_row, "unclassified_open_ar", 0) or 0),
+                "unclassified_open_ar_balance": round(float(getattr(overview_row, "unclassified_open_ar_balance", 0) or 0), 2),
+                "cadence": {
+                    "day": {
+                        "label": "Today",
+                        "count": int(getattr(summary_row, "cadence_day_count", 0) or 0),
+                        "count_prev": int(getattr(summary_row, "cadence_day_count_prev", 0) or 0),
+                        "balance": round(float(getattr(summary_row, "cadence_day_balance", 0) or 0), 2),
+                    },
+                    "week": {
+                        "label": "This Week",
+                        "count": int(getattr(summary_row, "cadence_week_count", 0) or 0),
+                        "count_prev": int(getattr(summary_row, "cadence_week_count_prev", 0) or 0),
+                        "balance": round(float(getattr(summary_row, "cadence_week_balance", 0) or 0), 2),
+                    },
+                    "month": {
+                        "label": "This Month",
+                        "count": int(getattr(summary_row, "cadence_month_count", 0) or 0),
+                        "count_prev": int(getattr(summary_row, "cadence_month_count_prev", 0) or 0),
+                        "balance": round(float(getattr(summary_row, "cadence_month_balance", 0) or 0), 2),
+                    },
+                    "quarter": {
+                        "label": "This Quarter",
+                        "count": int(getattr(summary_row, "cadence_quarter_count", 0) or 0),
+                        "count_prev": int(getattr(summary_row, "cadence_quarter_count_prev", 0) or 0),
+                        "balance": round(float(getattr(summary_row, "cadence_quarter_balance", 0) or 0), 2),
+                    },
+                    "year": {
+                        "label": "This Year",
+                        "count": int(getattr(summary_row, "cadence_year_count", 0) or 0),
+                        "count_prev": int(getattr(summary_row, "cadence_year_count_prev", 0) or 0),
+                        "balance": round(float(getattr(summary_row, "cadence_year_balance", 0) or 0), 2),
+                    },
+                },
             },
             "today": {
-                "workable_count": workable_today,
-                "workable_balance": round(workable_today_balance, 2),
+                "workable_count": denials_today + npnr_today,
+                "workable_balance": round(denials_balance + npnr_balance, 2),
                 "denials": denials_today,
+                "denials_balance": round(denials_balance, 2),
                 "npnr": npnr_today,
-                "progress_pct": round((workable_today / workplan_total_count) * 100, 1) if workplan_total_count else 0.0,
+                "npnr_balance": round(npnr_balance, 2),
+                "progress_pct": round(((denials_today + npnr_today) / workplan_total_count) * 100, 1) if workplan_total_count else 0.0,
             },
             "later": {
                 "remaining_count": remaining_ar_count,
@@ -4588,31 +5589,14 @@ def api_ar_workplan():
                 "nrnp_rule": "Today card logic remains on the current denial and NPNR operational definitions.",
                 "high_latency_rule": "High latency is counted for model-through AR claims when last billed date is older than 40 days and no response is posted.",
             },
-            "trends": {
-                "freshness": {
-                    "current_window_label": current_window_label,
-                    "baseline_window_label": baseline_window_label,
-                    "open_buckets": open_buckets,
-                    "entry_mix": {
-                        "fresh_share_pct": fresh_current_share,
-                        "fresh_delta_pct_points": round(fresh_current_share - fresh_baseline_share, 1),
-                        "aging_share_pct": aging_current_share,
-                        "aging_delta_pct_points": round(aging_current_share - aging_baseline_share, 1),
-                        "current_total": current_entry_total,
-                        "baseline_total": baseline_entry_total,
-                    },
-                },
-                "denial_shift": {
-                    "current_window_label": current_window_label,
-                    "baseline_window_label": baseline_window_label,
-                    "current_top_reason": current_top_reason,
-                    "baseline_top_reason": baseline_top_reason,
-                    "emergent_reason": emergent_reason,
-                    "rows": denial_rows,
-                },
-            },
             "payers": payers,
         }
+
+        validated_workplan = _fetch_date_phase_workplan_metrics(client, phase, month, granularity)
+        if validated_workplan:
+            result["trends"]["validated_source"] = validated_workplan["source"]
+            result["summary"]["validated_source"] = validated_workplan["source"]
+            result["summary"]["validated_metrics"] = validated_workplan["summary"]
 
         _workplan_cache[cache_key] = {"ts": time.time(), "data": result}
         response = jsonify(result)

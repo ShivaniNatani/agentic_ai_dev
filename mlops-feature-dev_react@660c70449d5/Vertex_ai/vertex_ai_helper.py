@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import threading
 from functools import lru_cache
 from pathlib import Path
@@ -15,6 +16,11 @@ from vertexai.generative_models import GenerativeModel
 
 _BASE_DIR = Path(__file__).resolve().parent
 _CONFIG_PATH = _BASE_DIR / "config.json"
+_DEFAULT_GENERATION_CONFIG = {
+    "temperature": 0,
+    "top_p": 1.0,
+    "response_mime_type": "text/plain",
+}
 _ALLOWED_GENERATION_KEYS = {"temperature", "top_p", "top_k", "max_output_tokens", "response_mime_type"}
 
 _init_lock = threading.Lock()
@@ -25,10 +31,45 @@ _model_cache: Dict[str, GenerativeModel] = {}
 
 @lru_cache(maxsize=1)
 def _load_config() -> Dict[str, Any]:
-    if not _CONFIG_PATH.exists():
-        raise FileNotFoundError(f"Vertex AI config not found at {_CONFIG_PATH}")
-    with _CONFIG_PATH.open("r", encoding="utf-8") as fh:
-        return json.load(fh)
+    config_candidates = []
+    env_config_path = Path(str(os.getenv("VERTEX_AI_CONFIG_PATH", "")).strip()).expanduser() if os.getenv("VERTEX_AI_CONFIG_PATH") else None
+    if env_config_path:
+        config_candidates.append(env_config_path)
+    config_candidates.extend([
+        _CONFIG_PATH,
+        _BASE_DIR.parent / "vertex.ai" / "config.json",
+    ])
+
+    for candidate in config_candidates:
+        if candidate.exists():
+            with candidate.open("r", encoding="utf-8") as fh:
+                return json.load(fh)
+
+    default_service_account = os.getenv("VERTEX_AI_SERVICE_ACCOUNT_FILE", "/app/secrets/mlflow-sa-prod.json")
+    return {
+        "location": os.getenv("VERTEX_AI_LOCATION", "us-central1"),
+        "model_name": os.getenv("VERTEX_AI_MODEL_NAME", "gemini-2.5-pro"),
+        "service_account_file": default_service_account,
+        "generation_config": dict(_DEFAULT_GENERATION_CONFIG),
+    }
+
+
+def _resolve_service_account_path(key_file: str) -> Path:
+    key_path = Path(key_file).expanduser()
+    if key_path.is_absolute() and key_path.exists():
+        return key_path
+
+    search_candidates = [
+        _BASE_DIR / key_file,
+        _BASE_DIR.parent / key_file,
+        _BASE_DIR.parent / "secrets" / key_file,
+        Path("/app/secrets") / key_file,
+    ]
+    for candidate in search_candidates:
+        if candidate.exists():
+            return candidate
+
+    return key_path
 
 
 @lru_cache(maxsize=1)
@@ -38,7 +79,7 @@ def _get_credentials() -> service_account.Credentials:
     if not key_file:
         raise KeyError("`service_account_file` missing from config.json")
     
-    key_path = _BASE_DIR / key_file
+    key_path = _resolve_service_account_path(str(key_file))
     if not key_path.exists():
          raise FileNotFoundError(f"Service account file not found at {key_path}")
             

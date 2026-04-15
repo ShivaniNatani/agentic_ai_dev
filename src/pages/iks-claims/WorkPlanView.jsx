@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowRight, ChevronDown, FileText, LayoutGrid, ListTodo } from 'lucide-react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowRight, ChevronDown, FileText, LayoutGrid, ListTodo, TrendingUp, TrendingDown, Activity } from 'lucide-react'
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { formatCurrencyCompact, formatNumber } from '../../utils/formatters'
 import './WorkPlanView.css'
 
@@ -8,12 +9,12 @@ const formatClaimPool = (value, { plus = false } = {}) => {
     if (!Number.isFinite(number) || number <= 0) return plus ? '0+' : '0'
     if (number >= 1_000_000) {
         const scaled = number / 1_000_000
-        const rounded = scaled >= 10 ? scaled.toFixed(0) : scaled.toFixed(1)
+        const rounded = scaled.toFixed(1)
         return `${rounded.replace(/\.0$/, '')}M${plus ? '+' : ''}`
     }
     if (number >= 1_000) {
         const scaled = number / 1_000
-        const rounded = scaled >= 10 ? scaled.toFixed(0) : scaled.toFixed(1)
+        const rounded = scaled.toFixed(1)
         return `${rounded.replace(/\.0$/, '')}K${plus ? '+' : ''}`
     }
     return `${formatNumber(number)}${plus ? '+' : ''}`
@@ -28,6 +29,22 @@ const formatItttDate = (value) => {
     if (!value) return 'Not scheduled'
     const parsed = new Date(`${value}T00:00:00`)
     if (Number.isNaN(parsed.getTime())) return value
+    return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+const formatMonthLabel = (value) => {
+    if (!value) return 'Live AR snapshot'
+    const parsed = new Date(`${value}-01T00:00:00`)
+    if (Number.isNaN(parsed.getTime())) return value
+    return parsed.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+}
+
+const formatAveragePaymentDate = (lastBillDate, avgPaymentDays) => {
+    const days = Number(avgPaymentDays)
+    if (!lastBillDate || !Number.isFinite(days)) return '--'
+    const parsed = new Date(`${lastBillDate}T00:00:00`)
+    if (Number.isNaN(parsed.getTime())) return '--'
+    parsed.setDate(parsed.getDate() + Math.round(days))
     return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
@@ -75,12 +92,27 @@ const formatDetailValue = (value, fallback = '') => {
     return text
 }
 
+const formatAgeDays = (value) => {
+    const numeric = Number(value)
+    if (!Number.isFinite(numeric)) return '--'
+    return `${formatNumber(Math.max(0, Math.round(numeric)))}d`
+}
+
 const coerceNumber = (...values) => {
     for (const value of values) {
         const number = Number(value)
         if (Number.isFinite(number)) return number
     }
     return 0
+}
+
+const normalizeWorkPlanScopedDate = (selectedDate = '', asOfValue = '') => {
+    const scopedDate = String(selectedDate || '').slice(0, 10)
+    const asOfDate = String(asOfValue || '').slice(0, 10)
+
+    if (!scopedDate) return asOfDate
+    if (!asOfDate) return scopedDate
+    return scopedDate > asOfDate ? asOfDate : scopedDate
 }
 
 const buildDenialHeadline = (currentTop, baselineTop, emergent, baselineWindow) => {
@@ -101,13 +133,25 @@ const buildFallbackData = (status = 'Loading live AR data...') => ({
     inventory: {
         title: 'TOTAL INVENTORY',
         subtitle: 'Work Plan Claims',
+        metaLabel: 'Total AR encounters',
+        metaValue: '--',
         volume: '--',
+        spotlightTags: [
+            { label: 'Total AR', value: '--' },
+        ],
         metrics: [
-            { label: 'AR Total', value: '--', tone: 'default' },
-            { label: 'Worked Total', value: '--', tone: 'default' },
-            { label: 'Worked 45D', value: '--', tone: 'default' },
-            { label: 'NPNR', value: '--', tone: 'info' },
-            { label: 'Open Balance', value: '--', tone: 'default', fullWidth: true },
+            { label: 'Work Plan', value: '--', tone: 'info', detail: '--' },
+            { label: 'Worked in 45D', value: '--', tone: 'default', detail: '--' },
+            { label: 'Worked (All Time)', value: '--', tone: 'default', detail: '--' },
+            { label: 'NPNR', value: '--', tone: 'warning', detail: '--' },
+            { label: 'Open Balance', value: '--', tone: 'info', detail: '--' },
+        ],
+        cadence: [
+            { label: 'Day', value: '--', detail: '--' },
+            { label: 'Week', value: '--', detail: '--' },
+            { label: 'Month', value: '--', detail: '--' },
+            { label: 'Quarter', value: '--', detail: '--' },
+            { label: 'Year', value: '--', detail: '--' },
         ],
     },
     today: {
@@ -115,7 +159,7 @@ const buildFallbackData = (status = 'Loading live AR data...') => ({
         badge: 'LIVE',
         subtitle: 'Actionable AR as of today',
         progress: 0,
-        primaryLabel: 'Workable',
+        primaryLabel: 'Actionable Claims',
         primaryValue: '--',
         secondaryLabel: 'Risk $',
         secondaryValue: '--',
@@ -126,22 +170,52 @@ const buildFallbackData = (status = 'Loading live AR data...') => ({
     },
     later: {
         title: 'LATER',
-        subtitle: 'Remaining work plan after NPNR',
-        volumeLabel: 'Remaining workable claims',
+        subtitle: 'Remaining work plan after today’s actionable queue',
+        volumeLabel: 'Remaining actionable claims',
         backlog: '--',
         itttDate: {
-            label: 'ITTT Date',
+            label: 'Scope',
             anchorDate: '',
-            value: 'Not scheduled',
-            detail: 'Waiting for the next pending prediction date.',
-            linkLabel: 'Open detailed calendar view',
+            value: 'Live AR snapshot',
+            detail: 'Remaining AR work plan after today’s denials and NPNR split.',
+            linkLabel: 'Open calendar view',
             linkHref: '/dashboard/optimix-iks#iks-calendar-panel',
         },
         items: [
-            { label: 'Future ITTT Queue', detail: 'Pending ITTT date', value: '--', flag: 'ITTT', tone: 'default' },
-            { label: 'Propensity to Pay', detail: 'Pending ITTT date', value: '--', flag: 'PRED', tone: 'default' },
-            { label: 'Denial Prediction', detail: 'Pending ITTT date', value: '--', flag: 'PRED', tone: 'muted' },
+            { label: 'Remaining Balance', detail: 'Open AR still left in Work Plan', value: '--', flag: 'AR', tone: 'default' },
+            { label: 'Not Worked', detail: 'Open AR with no worked signal', value: '--', flag: 'AR', tone: 'default' },
+            { label: 'Worked >45D', detail: 'Touched, but outside the last 45 days', value: '--', flag: 'AR', tone: 'muted' },
         ],
+    },
+    breakdown: {
+        title: 'Total Open AR Breakdown',
+        age: [
+            { label: '< 1 Year', count: 0, value: '--', share: '0%', color: '#36d3e0' },
+            { label: '> 1 Year', count: 0, value: '--', share: '0%', color: '#8b5cf6' },
+        ],
+        propensity: [
+            { label: 'Predicted to Pay', count: 0, value: '--', share: '0%', color: '#38e1d4' },
+            { label: 'Predicted to Deny', count: 0, value: '--', share: '0%', color: '#fb923c' },
+            { label: 'Unclassified', count: 0, value: '--', share: '0%', color: '#94a3b8' },
+        ],
+    },
+    workedStatus: {
+        title: 'Worked Status (Total Open AR)',
+        totalLabel: 'Total Open AR',
+        totalValue: '--',
+        cards: [
+            { label: 'Worked', value: '--', share: '0%' },
+            { label: 'Not Worked', value: '--', share: '0%' },
+        ],
+        breakdown: [
+            { label: 'Worked in last 45 days', value: '--', share: '0%' },
+            { label: 'Worked more than 45 days', value: '--', share: '0%' },
+        ],
+        footnote: 'All breakdowns are derived from Total Open AR.',
+    },
+    aboutKpis: {
+        title: "About These KPI's",
+        text: 'Propensity to Pay and Propensity to Deny are derived from Total Open AR encounters using the prediction mapping.',
     },
     npnr: {
         title: 'NPNR Payer Detail',
@@ -202,12 +276,39 @@ const buildFallbackData = (status = 'Loading live AR data...') => ({
 })
 
 const formatCompactCount = (value, options = {}) => formatClaimPool(value, options)
+const hasTrendValue = (value) => Number.isFinite(Number(value))
+const formatShareOfTotal = (value, total, digits = 1) => (
+    total > 0 ? formatPercent((coerceNumber(value, 0) / total) * 100, digits) : '0%'
+)
 
-const mapWorkPlanPayload = (payload, selectedMonth, npnrDetailSummary = null) => {
+const buildDonutGradient = (items) => {
+    const total = items.reduce((sum, item) => sum + coerceNumber(item.count, 0), 0)
+    if (total <= 0) return 'conic-gradient(rgba(148, 163, 184, 0.16) 0% 100%)'
+
+    let cursor = 0
+    const segments = []
+
+    items.forEach((item) => {
+        const count = coerceNumber(item.count, 0)
+        if (count <= 0) return
+        const pct = (count / total) * 100
+        const nextCursor = cursor + pct
+        segments.push(`${item.color} ${cursor}% ${nextCursor}%`)
+        cursor = nextCursor
+    })
+
+    if (cursor < 100) {
+        segments.push(`rgba(148, 163, 184, 0.12) ${cursor}% 100%`)
+    }
+
+    return `conic-gradient(${segments.join(', ')})`
+}
+
+const mapWorkPlanPayload = (payload, selectedMonth, npnrDetailSummary = null, selectedDate = '', dayActionableMetrics = null) => {
     if (!payload) return buildFallbackData('Live AR data unavailable.')
 
     const detailSummary = npnrDetailSummary || {}
-    const detailNpnrCount = coerceNumber(detailSummary.total_claims, 0)
+    const detailNpnrCount = coerceNumber(detailSummary.total_grouped_rows, detailSummary.total_claims, 0)
     const totalClaims = coerceNumber(payload.inventory?.claims_pool, 0)
     const totalBalance = coerceNumber(payload.inventory?.balance, 0)
     const summary = payload.summary || {}
@@ -218,27 +319,43 @@ const mapWorkPlanPayload = (payload, selectedMonth, npnrDetailSummary = null) =>
     const workedLast45Count = coerceNumber(summary.worked_last_45_count, Math.max(arTotalCount - workplanTotalCount, 0))
     const arNpnrCount = coerceNumber(summary.npnr_total_count, 0)
     const arNpnrBalance = coerceNumber(summary.npnr_total_balance, 0)
-    const denialsToday = coerceNumber(payload.today?.denials, 0)
-    const hasLiveNpnrDetail = npnrDetailSummary !== null && detailSummary.source === 'live_bq'
-    const npnrToday = coerceNumber(payload.today?.npnr, arNpnrCount)
-    const workableCount = denialsToday + npnrToday
-    const workableBalance = coerceNumber(payload.today?.workable_balance, 0)
-    const remainingLaterCount = coerceNumber(
-        summary.later_workplan_count,
-        Math.max(workplanTotalCount - arNpnrCount, 0),
-    )
-    const remainingLaterBalance = coerceNumber(
-        summary.later_workplan_balance,
-        Math.max(workplanTotalBalance - arNpnrBalance, 0),
-    )
-    const futureCount = coerceNumber(payload.later?.future_total_count, 0)
-    const futureBalance = coerceNumber(payload.later?.future_total_balance, 0)
-    const scopedMonthLabel = selectedMonth ? selectedMonth : 'pending ITTT'
-    const nextItttDate = payload.later?.next_ittt_date || ''
-    const lastItttDate = payload.later?.last_ittt_date || ''
+    const workedMoreThan45Count = coerceNumber(summary.worked_more_than_45_count, 0)
+    const notWorkedCount = coerceNumber(summary.not_worked_count, 0)
+    const totalArEncounters = coerceNumber(summary.total_ar_encounters, totalClaims)
     const asOfDate = payload.as_of ? String(payload.as_of).slice(0, 10) : ''
-    const useAsOfDateForCalendar = asOfDate && (!selectedMonth || asOfDate.startsWith(selectedMonth))
-    const calendarAnchorDate = useAsOfDateForCalendar ? asOfDate : (nextItttDate || asOfDate)
+    const scopedDate = normalizeWorkPlanScopedDate(selectedDate, asOfDate)
+    const hasScopedDayMetrics = Boolean(scopedDate && dayActionableMetrics)
+    const denialsToday = hasScopedDayMetrics
+        ? coerceNumber(dayActionableMetrics.denials, payload.today?.denials, 0)
+        : coerceNumber(payload.today?.denials, 0)
+    const hasLiveNpnrDetail = npnrDetailSummary !== null && detailSummary.source === 'live_bq'
+    const visibleNpnrCount = hasLiveNpnrDetail ? coerceNumber(detailSummary.total_claims, 0) : arNpnrCount
+    const npnrToday = hasScopedDayMetrics
+        ? coerceNumber(dayActionableMetrics.npnr, payload.today?.npnr, arNpnrCount)
+        : coerceNumber(payload.today?.npnr, arNpnrCount)
+    const workableCount = hasScopedDayMetrics
+        ? coerceNumber(dayActionableMetrics.workable, denialsToday + npnrToday)
+        : coerceNumber(payload.today?.workable_count, denialsToday + npnrToday)
+    const workableBalance = coerceNumber(
+        hasScopedDayMetrics ? dayActionableMetrics.workableBalance : null,
+        payload.today?.workable_balance,
+        coerceNumber(payload.today?.denials_balance, 0) + arNpnrBalance,
+    )
+
+    // Helper to calculate trend from new backend fields
+    const calculateTrend = (current, prev) => {
+        const c = coerceNumber(current, 0)
+        const p = coerceNumber(prev, 0)
+        if (p <= 0) return null
+        return ((c - p) / p * 100).toFixed(1)
+    }
+    const remainingLaterCount = Math.max(workplanTotalCount - workableCount, 0)
+    const remainingLaterBalance = Math.max(workplanTotalBalance - workableBalance, 0)
+    const scopedMonthLabel = selectedMonth ? formatMonthLabel(selectedMonth) : 'Live AR snapshot'
+    const scopeAnchorDate = scopedDate || asOfDate
+    const progressPct = hasScopedDayMetrics
+        ? (workplanTotalCount ? (workableCount / workplanTotalCount) * 100 : 0)
+        : Number(payload.today?.progress_pct || 0)
     const freshnessData = payload.trends?.freshness || {}
     const entryMix = freshnessData.entry_mix || {}
     const baselineWindow = freshnessData.baseline_window_label || 'baseline'
@@ -259,10 +376,33 @@ const mapWorkPlanPayload = (payload, selectedMonth, npnrDetailSummary = null) =>
     ), null)
     const freshDelta = Number(entryMix.fresh_delta_pct_points || 0)
     const agingDelta = Number(entryMix.aging_delta_pct_points || 0)
+    const cadence = summary.cadence || {}
+    const cadenceCards = [
+        { key: 'day', label: 'Day' },
+        { key: 'week', label: 'Week' },
+        { key: 'month', label: 'Month' },
+        { key: 'quarter', label: 'Quarter' },
+        { key: 'year', label: 'Year' },
+    ].map(({ key, label }) => {
+        const bucket = cadence[key] || {}
+        const trend = calculateTrend(bucket.count, bucket.count_prev)
+        return {
+            label,
+            value: formatCompactCount(coerceNumber(bucket.count, 0)),
+            detail: formatCurrencyCompact(coerceNumber(bucket.balance, 0)),
+            trend: trend,
+        }
+    })
     const denialShiftData = payload.trends?.denial_shift || {}
     const currentTopReason = denialShiftData.current_top_reason
     const baselineTopReason = denialShiftData.baseline_top_reason
     const emergentReason = denialShiftData.emergent_reason
+    const missingDenialCodeSummary = denialShiftData.missing_code_summary || {}
+    const missingCurrentCount = coerceNumber(missingDenialCodeSummary.current_count, 0)
+    const missingBaselineCount = coerceNumber(missingDenialCodeSummary.baseline_count, 0)
+    const missingCodeNote = (missingCurrentCount || missingBaselineCount)
+        ? `Missing-code bucket: ${formatNumber(missingCurrentCount)} current and ${formatNumber(missingBaselineCount)} baseline denials have no usable posted denial code.`
+        : ''
     const denialBaselineWindow = denialShiftData.baseline_window_label || baselineWindow
     const denialRows = Array.isArray(denialShiftData.rows)
         ? denialShiftData.rows.map((row) => ({
@@ -275,27 +415,88 @@ const mapWorkPlanPayload = (payload, selectedMonth, npnrDetailSummary = null) =>
             state: row.trend_state || 'Stable',
         }))
         : []
-
+    const ageItems = [
+        {
+            label: '< 1 Year',
+            count: coerceNumber(summary.ar_less_than_1_year, 0),
+            value: formatCompactCount(coerceNumber(summary.ar_less_than_1_year, 0)),
+            share: formatShareOfTotal(coerceNumber(summary.ar_less_than_1_year, 0), arTotalCount),
+            color: '#36d3e0',
+        },
+        {
+            label: '> 1 Year',
+            count: coerceNumber(summary.ar_greater_than_1_year, 0),
+            value: formatCompactCount(coerceNumber(summary.ar_greater_than_1_year, 0)),
+            share: formatShareOfTotal(coerceNumber(summary.ar_greater_than_1_year, 0), arTotalCount),
+            color: '#8b5cf6',
+        },
+    ]
+    const propensityItems = [
+        {
+            label: 'Predicted to Pay',
+            count: coerceNumber(summary.ar_predicted_to_pay, 0),
+            value: formatCompactCount(coerceNumber(summary.ar_predicted_to_pay, 0)),
+            share: formatShareOfTotal(coerceNumber(summary.ar_predicted_to_pay, 0), arTotalCount),
+            color: '#38e1d4',
+        },
+        {
+            label: 'Predicted to Deny',
+            count: coerceNumber(summary.ar_predicted_to_deny, 0),
+            value: formatCompactCount(coerceNumber(summary.ar_predicted_to_deny, 0)),
+            share: formatShareOfTotal(coerceNumber(summary.ar_predicted_to_deny, 0), arTotalCount),
+            color: '#fb923c',
+        },
+        {
+            label: 'Unclassified',
+            count: coerceNumber(summary.unclassified_open_ar, 0),
+            value: formatCompactCount(coerceNumber(summary.unclassified_open_ar, 0)),
+            share: formatShareOfTotal(coerceNumber(summary.unclassified_open_ar, 0), arTotalCount),
+            color: '#94a3b8',
+        },
+    ]
     return {
         heading: 'WORK PLAN',
         inventory: {
-            title: 'TOTAL INVENTORY',
-            subtitle: 'Work Plan Claims',
-            volume: formatCompactCount(workplanTotalCount),
-            metrics: [
-                { label: 'AR Total', value: `${formatCompactCount(arTotalCount)} / ${formatCurrencyCompact(coerceNumber(summary.ar_total_balance, totalBalance))}`, tone: 'default' },
-                { label: 'Worked Total', value: `${formatCompactCount(workedTotalCount)} / ${formatCurrencyCompact(coerceNumber(summary.worked_total_balance, 0))}`, tone: 'default' },
-                { label: 'Worked 45D', value: `${formatCompactCount(workedLast45Count)} / ${formatCurrencyCompact(coerceNumber(summary.worked_45d_balance, 0))}`, tone: 'default' },
-                { label: 'NPNR', value: `${formatCompactCount(arNpnrCount)} / ${formatCurrencyCompact(arNpnrBalance)}`, tone: 'info' },
-                { label: 'Open Balance', value: formatCurrencyCompact(workplanTotalBalance), tone: 'default', fullWidth: true },
+            title: 'AR OVERVIEW',
+            subtitle: 'Total Open AR = Work Plan + Worked',
+            metaLabel: 'Total AR Encounters',
+            metaValue: formatCompactCount(totalArEncounters),
+            volume: formatCompactCount(arTotalCount),
+            spotlightTags: [
+                { label: '< 1 Yr', value: formatCompactCount(coerceNumber(summary.ar_less_than_1_year, 0)) },
+                { label: '> 1 Yr', value: formatCompactCount(coerceNumber(summary.ar_greater_than_1_year, 0)) },
+                { label: 'Predicted to Pay', value: formatCompactCount(coerceNumber(summary.ar_predicted_to_pay, 0)) },
+                { label: 'Predicted to Deny', value: formatCompactCount(coerceNumber(summary.ar_predicted_to_deny, 0)) },
             ],
+            metrics: [
+                { label: 'Work Plan', value: formatCompactCount(workplanTotalCount), amount: formatCurrencyCompact(workplanTotalBalance), tone: 'info', detail: 'Not worked in the last 45 days = No worked signal + Worked >45D' },
+                { label: 'Worked in 45D', value: formatCompactCount(workedLast45Count), amount: formatCurrencyCompact(coerceNumber(summary.worked_45d_balance, 0)), tone: 'default', detail: 'Open AR claims touched within the last 45 days' },
+                { label: 'Worked (All Time)', value: formatCompactCount(workedTotalCount), tone: 'default', detail: 'Any worked signal = Worked in 45D + Worked >45D' },
+                {
+                    label: 'NPNR',
+                    value: formatCompactCount(visibleNpnrCount),
+                    amount: formatCurrencyCompact(
+                        hasLiveNpnrDetail
+                            ? coerceNumber(detailSummary.total_amount, 0)
+                            : arNpnrBalance,
+                    ),
+                    tone: 'warning',
+                    detail: hasLiveNpnrDetail
+                        ? 'Live NPNR detail total from the payer-detail section below'
+                        : 'No Payment No Response claims',
+                },
+                { label: 'Open Balance', value: formatCurrencyCompact(totalBalance), tone: 'info', detail: 'Total outstanding AR balance' },
+            ],
+            cadence: cadenceCards,
         },
         today: {
             title: 'TODAY',
             badge: 'LIVE',
-            subtitle: 'Actionable AR as of today',
-            progress: Math.max(0, Math.min(100, Math.round(Number(payload.today?.progress_pct || 0)))),
-            primaryLabel: 'Workable',
+            subtitle: hasScopedDayMetrics
+                ? `Actionable AR for ${formatItttDate(scopedDate)}`
+                : 'Actionable AR as of today',
+            progress: Math.max(0, Math.min(100, Math.round(progressPct))),
+            primaryLabel: 'Actionable Claims',
             primaryValue: formatCompactCount(workableCount),
             secondaryLabel: 'Risk $',
             secondaryValue: formatCurrencyCompact(workableBalance),
@@ -316,50 +517,93 @@ const mapWorkPlanPayload = (payload, selectedMonth, npnrDetailSummary = null) =>
         },
         later: {
             title: 'LATER',
-            subtitle: `Remaining work plan after NPNR • ${formatCurrencyCompact(remainingLaterBalance)}`,
-            volumeLabel: 'Remaining workable claims',
+            subtitle: `Remaining work plan after today’s actionable queue • ${formatCurrencyCompact(remainingLaterBalance)}`,
+            volumeLabel: 'Remaining actionable claims',
             backlog: formatCompactCount(remainingLaterCount),
             itttDate: {
-                label: 'ITTT Date',
-                anchorDate: calendarAnchorDate,
-                value: formatItttDate(calendarAnchorDate),
-                detail: buildLaterItttDetail(calendarAnchorDate, nextItttDate, lastItttDate),
-                linkLabel: `Open ${formatItttDate(calendarAnchorDate)} calendar view`,
+                label: 'Scope',
+                anchorDate: scopeAnchorDate,
+                value: selectedMonth ? scopedMonthLabel : (scopeAnchorDate ? formatItttDate(scopeAnchorDate) : 'Live AR snapshot'),
+                detail: selectedMonth
+                    ? `AR work plan scoped through ${scopedMonthLabel}. Remaining inventory is after today’s Denials + NPNR split.`
+                    : 'Current AR remainder after today’s denials and NPNR split.',
+                linkLabel: scopeAnchorDate
+                    ? `Open ${formatItttDate(scopeAnchorDate)} calendar view`
+                    : 'Open calendar view',
                 linkHref: '/dashboard/optimix-iks#iks-calendar-panel',
             },
             items: [
                 {
-                    label: 'Future ITTT Queue',
-                    detail: `Scoped to ${scopedMonthLabel}`,
-                    value: formatCompactCount(futureCount),
-                    flag: 'ITTT',
+                    label: 'Remaining Balance',
+                    detail: 'Open AR balance still left in Work Plan',
+                    value: formatCurrencyCompact(remainingLaterBalance),
+                    flag: 'AR',
                     tone: 'default',
                 },
                 {
-                    label: 'Propensity to Pay',
-                    detail: `From scheduled queue in ${scopedMonthLabel}`,
-                    value: formatCompactCount(payload.later?.propensity_to_pay || 0),
-                    flag: 'PRED',
+                    label: 'Not Worked',
+                    detail: 'Open AR with no worked signal',
+                    value: formatCompactCount(notWorkedCount),
+                    flag: 'AR',
                     tone: 'default',
                 },
                 {
-                    label: 'Denial Prediction',
-                    detail: `Future queue risk ${formatCurrencyCompact(futureBalance)}`,
-                    value: formatCompactCount(payload.later?.denial_prediction || 0),
-                    flag: 'PRED',
+                    label: 'Worked >45D',
+                    detail: 'Touched, but outside the last 45 days',
+                    value: formatCompactCount(workedMoreThan45Count),
+                    flag: 'AR',
                     tone: 'muted',
                 },
             ],
+        },
+        breakdown: {
+            title: 'Total Open AR Breakdown',
+            age: ageItems,
+            propensity: propensityItems,
+        },
+        workedStatus: {
+            title: 'Worked Status (Total Open AR)',
+            totalLabel: 'Total Open AR',
+            totalValue: formatCompactCount(arTotalCount),
+            cards: [
+                {
+                    label: 'Worked in 45D',
+                    value: formatCompactCount(workedLast45Count),
+                    share: formatShareOfTotal(workedLast45Count, arTotalCount),
+                },
+                {
+                    label: 'Not Worked in 45D',
+                    value: formatCompactCount(workplanTotalCount),
+                    share: formatShareOfTotal(workplanTotalCount, arTotalCount),
+                },
+            ],
+            breakdown: [
+                {
+                    label: 'No worked signal',
+                    value: formatCompactCount(notWorkedCount),
+                    share: formatShareOfTotal(notWorkedCount, workplanTotalCount),
+                },
+                {
+                    label: 'Worked more than 45 days',
+                    value: formatCompactCount(workedMoreThan45Count),
+                    share: formatShareOfTotal(workedMoreThan45Count, workplanTotalCount),
+                },
+            ],
+            footnote: `${formatCompactCount(notWorkedCount)} no-worked-signal + ${formatCompactCount(workedMoreThan45Count)} worked >45D = ${formatCompactCount(workplanTotalCount)} Not Worked in 45D. Add ${formatCompactCount(workedLast45Count)} worked in 45D to reconcile to ${formatCompactCount(arTotalCount)} Total Open AR.`,
+        },
+        aboutKpis: {
+            title: "About These KPI's",
+            text: 'Propensity to Pay and Propensity to Deny are derived by mapping Total Open AR encounters to the denial prediction model using PredictedFlag and AccuracyFlag.',
         },
         npnr: {
             title: 'NPNR Payer Detail',
             subtitle: 'Live AR NPNR detail using encounter, transaction, payer, and entity joins.',
             sourceLabel: 'Live BQ',
             summaryCards: [
-                { label: 'AR NPNR Total', value: formatCompactCount(arNpnrCount) },
-                { label: 'Live Detail Rows', value: formatCompactCount(detailNpnrCount) },
+                { label: 'NPNR Claims', value: formatCompactCount(visibleNpnrCount) },
+                { label: 'Grouped Payers', value: formatCompactCount(detailNpnrCount) },
                 { label: 'Unique Payers', value: formatCompactCount(coerceNumber(detailSummary.unique_payers, 0)) },
-                { label: 'Total Amount', value: formatCurrencyCompact(coerceNumber(detailSummary.total_amount, 0)) },
+                { label: 'Open Balance', value: formatCurrencyCompact(coerceNumber(detailSummary.total_amount, 0)) },
                 {
                     label: 'Avg Claim Age',
                     value: detailNpnrCount > 0
@@ -391,10 +635,10 @@ const mapWorkPlanPayload = (payload, selectedMonth, npnrDetailSummary = null) =>
         },
         freshness: {
             title: 'Fresh vs Aging Pressure',
-            subtitle: 'Open workable inventory today and entry mix versus the trailing baseline',
+            subtitle: 'Open actionable claims inventory today and entry mix versus the trailing baseline',
             insight: dominantBucket
-                ? `${dominantBucket.label} carries ${dominantBucket.shareLabel} of today's open workable inventory.`
-                : 'Live claim-age pressure will appear here when workable inventory is available.',
+                ? `${dominantBucket.label} carries ${dominantBucket.shareLabel} of today's open actionable claims inventory.`
+                : 'Live claim-age pressure will appear here when actionable claims inventory is available.',
             signals: [
                 {
                     label: 'Fresh Entry Share',
@@ -415,6 +659,7 @@ const mapWorkPlanPayload = (payload, selectedMonth, npnrDetailSummary = null) =>
             title: 'Emerging Denial Pattern',
             subtitle: 'Current denial-code mix against the trailing three-month baseline',
             headline: buildDenialHeadline(currentTopReason, baselineTopReason, emergentReason, denialBaselineWindow),
+            note: missingCodeNote,
             highlights: [
                 {
                     label: 'Current Top',
@@ -454,6 +699,49 @@ function ProgressRing({ value }) {
         >
             <div className="iks-workplan-ring__inner">
                 <span>{value}%</span>
+            </div>
+        </div>
+    )
+}
+
+function BreakdownDonut({ title, items }) {
+    const total = items.reduce((sum, item) => sum + coerceNumber(item.count, 0), 0)
+    let currentStop = 0
+    const donutStops = items
+        .filter((item) => coerceNumber(item.count, 0) > 0)
+        .map((item) => {
+            const share = total > 0 ? (coerceNumber(item.count, 0) / total) * 100 : 0
+            const start = currentStop
+            currentStop += share
+            return `${item.color} ${start}% ${currentStop}%`
+        })
+    const donutStyle = {
+        '--iks-workplan-donut-gradient': donutStops.length
+            ? `conic-gradient(${donutStops.join(', ')})`
+            : 'conic-gradient(rgba(148, 163, 184, 0.2) 0 100%)',
+    }
+
+    return (
+        <div className="iks-workplan__breakdown-block">
+            <div className="iks-workplan__breakdown-title">{title}</div>
+            <div className="iks-workplan__breakdown-content">
+                <div className="iks-workplan__donut" style={donutStyle} aria-hidden="true">
+                    <div className="iks-workplan__donut-center" />
+                </div>
+                <div className="iks-workplan__legend">
+                    {items.map((item) => (
+                        <div key={item.label} className="iks-workplan__legend-row">
+                            <i className="iks-workplan__legend-dot" style={{ backgroundColor: item.color }} />
+                            <div className="iks-workplan__legend-copy">
+                                <span>{item.label}</span>
+                                <div className="iks-workplan__legend-values">
+                                    <strong>{item.value}</strong>
+                                    <small>{item.share}</small>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     )
@@ -503,21 +791,21 @@ function NpnrDetailRow({ record }) {
     const [isExpanded, setIsExpanded] = useState(false)
     const hasEncounters = Array.isArray(record.encounters) && record.encounters.length > 0
 
-    const encounter = formatDetailValue(record.encounter_number)
-    const personId = formatDetailValue(record.person_id, '')
     const payerName = formatDetailValue(record.payer_name, 'Unknown payer')
     const payerId = formatDetailValue(record.payer_id, '')
-    const subgroup1 = formatDetailValue(record.payer_subgrouping, '')
-    const subgroup2 = formatDetailValue(record.payer_subgrouping_2, '')
-    const financialClass = formatDetailValue(record.financial_class, '')
+    const financialClass = formatDetailValue(record.financial_class, 'Unmapped')
     const financialClass2 = formatDetailValue(record.financial_class_2, '')
-    const lastBillDate = formatDetailValue(record.last_bill_date ? formatItttDate(record.last_bill_date) : null, '')
-    const claimAgeLabel = `${formatNumber(record.claim_age_in_days || 0)}d`
+    const lastBillDate = formatDetailValue(record.last_bill_date ? formatItttDate(record.last_bill_date) : null, '--')
+    const avgPaymentDaysLabel = Number.isFinite(Number(record.avg_payment_days))
+        ? `${Number(record.avg_payment_days).toFixed(1).replace(/\.0$/, '')}d`
+        : '--'
+    const avgPaymentDateLabel = formatAveragePaymentDate(record.last_bill_date, record.avg_payment_days)
+    const claimAgeLabel = formatAgeDays(record.claim_age_in_days)
     const amountLabel = formatCurrencyCompact(record.amount || 0)
 
     return (
         <>
-            <div 
+            <div
                 className={`iks-workplan-table__row iks-workplan-table__row--detail entity-${record.responsible_entity || 0} ${hasEncounters ? 'iks-row-expandable' : ''} ${isExpanded ? 'iks-row-expanded' : ''}`}
                 onClick={() => { if (hasEncounters) setIsExpanded(!isExpanded) }}
                 title={hasEncounters ? "Click to view individual accounts" : ""}
@@ -525,7 +813,7 @@ function NpnrDetailRow({ record }) {
             >
                 <div className="iks-workplan-table__detail-cell iks-workplan-table__detail-cell--encounter">
                     <div className="iks-workplan-table__payer-copy">
-                        <div className="iks-workplan-table__payer" style={{ fontSize: '15px' }} title={payerName}>
+                        <div className="iks-workplan-table__payer" title={payerName}>
                             {hasEncounters && <span className="iks-expand-icon">{isExpanded ? '▼' : '▶'}</span>} {payerName}
                             <span style={{ opacity: 0.5, fontSize: '0.85em', fontWeight: 500, marginLeft: '6px' }}>({record.count})</span>
                         </div>
@@ -551,6 +839,10 @@ function NpnrDetailRow({ record }) {
                         <span className="iks-workplan__date-enc-count">{formatNumber(record.count)} enc</span>
                     ) : null}
                 </div>
+                <div className="iks-workplan-table__detail-cell iks-workplan-table__detail-cell--numeric iks-workplan-table__detail-cell--timing" title={`${avgPaymentDateLabel}${avgPaymentDaysLabel !== '--' ? ` • ${avgPaymentDaysLabel}` : ''}`}>
+                    <span>{avgPaymentDateLabel}</span>
+                    {avgPaymentDaysLabel !== '--' ? <small className="iks-workplan__timing-meta">{avgPaymentDaysLabel}</small> : null}
+                </div>
                 <div className="iks-workplan-table__detail-cell iks-workplan-table__detail-cell--numeric" title={claimAgeLabel}>
                     {claimAgeLabel}
                 </div>
@@ -558,7 +850,7 @@ function NpnrDetailRow({ record }) {
                     {amountLabel}
                 </div>
             </div>
-            
+
             {isExpanded && hasEncounters && (
                 <div className="iks-workplan-nested-container">
                     <div className="iks-workplan-nested-header">
@@ -566,6 +858,7 @@ function NpnrDetailRow({ record }) {
                         <div className="nested-cell">Financial Class</div>
                         <div className="nested-cell">Entity</div>
                         <div className="nested-cell">Last Bill</div>
+                        <div className="nested-cell nested-numeric">Avg Pay Date</div>
                         <div className="nested-cell nested-numeric">Age</div>
                         <div className="nested-cell nested-numeric">Amount</div>
                     </div>
@@ -573,11 +866,17 @@ function NpnrDetailRow({ record }) {
                         {record.encounters.map(enc => (
                              <div key={`${enc.encounter_number}-${enc.amount}`} className="iks-workplan-nested-row">
                                 <div className="nested-cell" title={enc.encounter_number}>{formatDetailValue(enc.encounter_number)}</div>
-                                <div className="nested-cell" title={enc.financial_class}>{formatDetailValue(enc.financial_class)}</div>
-                                <div className="nested-cell"></div>
-                                <div className="nested-cell">{enc.last_bill_date ? formatItttDate(enc.last_bill_date) : 'N/A'}</div>
-                                <div className="nested-cell nested-numeric">{Math.round(enc.claim_age_in_days)}d</div>
-                                <div className="nested-cell nested-numeric">{formatCurrencyCompact(enc.amount)}</div>
+                                <div className="nested-cell" title={enc.financial_class}>{formatDetailValue(enc.financial_class, 'Unmapped')}</div>
+                                <div className="nested-cell" title={enc.entity_label}>{formatDetailValue(enc.entity_label, 'Unknown')}</div>
+                                <div className="nested-cell">{enc.last_bill_date ? formatItttDate(enc.last_bill_date) : '--'}</div>
+                                <div className="nested-cell nested-numeric nested-cell--timing">
+                                    <span>{formatAveragePaymentDate(enc.last_bill_date, enc.avg_payment_days)}</span>
+                                    {Number.isFinite(Number(enc.avg_payment_days))
+                                        ? <small className="iks-workplan__timing-meta">{`${Number(enc.avg_payment_days).toFixed(1).replace(/\.0$/, '')}d`}</small>
+                                        : null}
+                                </div>
+                                <div className="nested-cell nested-numeric nested-cell--age">{formatAgeDays(enc.claim_age_in_days)}</div>
+                                <div className="nested-cell nested-numeric nested-cell--amount">{formatCurrencyCompact(enc.amount)}</div>
                             </div>
                         ))}
                     </div>
@@ -587,8 +886,10 @@ function NpnrDetailRow({ record }) {
     )
 }
 
-export default function WorkPlanView({ selectedMonth = '', selectedClient = '', refreshToken = 0, onOpenCalendarView = null }) {
+export default function WorkPlanView({ selectedMonth = '', selectedClient = '', refreshToken = 0, onOpenCalendarView = null, onContextChange = null, selectedDate = '', dayActionableMetrics = null }) {
     const [payload, setPayload] = useState(null)
+    const [liveDayMetrics, setLiveDayMetrics] = useState(null)
+    const [granularity, setGranularity] = useState('day')
     const [error, setError] = useState('')
     const [isLoading, setIsLoading] = useState(true)
     const hasLoadedRef = useRef(false)
@@ -598,10 +899,15 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
     const [npnrSearch, setNpnrSearch] = useState('')
     const [npnrPage, setNpnrPage] = useState(1)
     const [npnrEntityFilter, setNpnrEntityFilter] = useState('')
+    const [npnrBalanceFilter, setNpnrBalanceFilter] = useState('open')
     const [collapsedPanels, setCollapsedPanels] = useState({
         freshness: false,
         denialShift: false,
     })
+    const workPlanCacheRef = useRef(new Map())
+    const dayMetricsCacheRef = useRef(new Map())
+    const npnrDetailCacheRef = useRef(new Map())
+    const deferredNpnrSearch = useDeferredValue(npnrSearch.trim())
 
     useEffect(() => {
         let isActive = true
@@ -611,6 +917,17 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
         hasLoadedRef.current = false
 
         const loadWorkPlan = () => {
+            const cacheKey = [selectedMonth || 'live', isAllPhaseSelection(selectedClient) ? 'all' : selectedClient || 'all', granularity, refreshToken].join('::')
+            const cachedPayload = workPlanCacheRef.current.get(cacheKey)
+
+            if (cachedPayload) {
+                hasLoadedRef.current = true
+                setPayload(cachedPayload)
+                setError('')
+                setIsLoading(false)
+                return
+            }
+
             if (controller) controller.abort()
             controller = new AbortController()
 
@@ -620,18 +937,19 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
 
             const params = new URLSearchParams()
             if (selectedMonth) params.set('month', selectedMonth)
+            params.set('granularity', granularity)
             if (!isAllPhaseSelection(selectedClient)) params.set('phase', selectedClient)
-            params.set('refresh', 'true')
+            if (refreshToken > 0) params.set('refresh', 'true')
 
             fetch(`/api/optimix/iks/ar-workplan${params.toString() ? `?${params.toString()}` : ''}`, {
                 signal: controller.signal,
-                cache: 'no-store',
             })
                 .then((response) => response.ok ? response.json() : Promise.reject(new Error(`Failed to load AR work plan (${response.status})`)))
                 .then((data) => {
                     if (!isActive) return
                     if (data?.error) throw new Error(data.error)
                     hasLoadedRef.current = true
+                    workPlanCacheRef.current.set(cacheKey, data)
                     setPayload(data)
                     setError('')
                 })
@@ -647,49 +965,58 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
                 })
         }
 
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
-                loadWorkPlan()
-            }
-        }
-
-        const handleWindowFocus = () => {
-            loadWorkPlan()
-        }
-
         loadWorkPlan()
-        document.addEventListener('visibilitychange', handleVisibilityChange)
-        window.addEventListener('focus', handleWindowFocus)
 
         return () => {
             isActive = false
             if (controller) controller.abort()
-            document.removeEventListener('visibilitychange', handleVisibilityChange)
-            window.removeEventListener('focus', handleWindowFocus)
         }
-    }, [selectedMonth, selectedClient, refreshToken])
+    }, [selectedMonth, selectedClient, granularity, refreshToken])
 
     useEffect(() => {
         let isActive = true
         const controller = new AbortController()
+        const detailKey = [
+            isAllPhaseSelection(selectedClient) ? 'all' : selectedClient || 'all',
+            selectedMonth || 'live',
+            deferredNpnrSearch || '',
+            npnrEntityFilter || '',
+            npnrBalanceFilter || 'open',
+            npnrPage,
+            refreshToken,
+        ].join('::')
+        const cachedDetail = npnrDetailCacheRef.current.get(detailKey)
+
+        if (cachedDetail) {
+            setNpnrDetail(cachedDetail)
+            setNpnrDetailError(cachedDetail?.error || '')
+            setNpnrDetailLoading(false)
+            return () => {
+                isActive = false
+                controller.abort()
+            }
+        }
 
         setNpnrDetailLoading(true)
         setNpnrDetailError('')
 
         const params = new URLSearchParams()
-        if (npnrSearch.trim()) params.set('search', npnrSearch.trim())
+        if (deferredNpnrSearch) params.set('search', deferredNpnrSearch)
         if (npnrEntityFilter) params.set('entity', npnrEntityFilter)
+        if (npnrBalanceFilter === 'zero') params.set('balance_zero', 'true')
         if (!isAllPhaseSelection(selectedClient)) params.set('phase', selectedClient)
+        if (selectedMonth) params.set('month', selectedMonth)
         params.set('page', String(npnrPage))
         params.set('per_page', '12')
+        if (refreshToken) params.set('refresh', 'true')
 
         fetch(`/api/optimix/iks/npnr-data?${params.toString()}`, {
             signal: controller.signal,
-            cache: 'no-store',
         })
             .then((response) => response.ok ? response.json() : Promise.reject(new Error(`Failed to load NPNR detail (${response.status})`)))
             .then((data) => {
                 if (!isActive) return
+                npnrDetailCacheRef.current.set(detailKey, data)
                 setNpnrDetail(data)
                 setNpnrDetailError(data?.error || '')
             })
@@ -708,15 +1035,116 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
             isActive = false
             controller.abort()
         }
-    }, [npnrSearch, npnrPage, npnrEntityFilter, selectedClient, refreshToken])
+    }, [deferredNpnrSearch, npnrPage, npnrEntityFilter, npnrBalanceFilter, selectedClient, selectedMonth, refreshToken])
+
+    const normalizedSelectedDate = useMemo(
+        () => normalizeWorkPlanScopedDate(selectedDate, payload?.as_of || ''),
+        [selectedDate, payload?.as_of],
+    )
+
+    useEffect(() => {
+        const scopedDate = normalizedSelectedDate
+        if (!scopedDate) {
+            setLiveDayMetrics(null)
+            return
+        }
+
+        let isActive = true
+        const controller = new AbortController()
+        const cacheKey = [scopedDate, isAllPhaseSelection(selectedClient) ? 'all' : selectedClient || 'all', refreshToken].join('::')
+        const cachedMetrics = dayMetricsCacheRef.current.get(cacheKey)
+
+        if (cachedMetrics) {
+            setLiveDayMetrics(cachedMetrics)
+            return () => {
+                isActive = false
+                controller.abort()
+            }
+        }
+
+        const params = new URLSearchParams()
+        params.set('date', scopedDate)
+        if (!isAllPhaseSelection(selectedClient)) params.set('phase', selectedClient)
+        if (refreshToken) params.set('refresh', 'true')
+
+        fetch(`/api/optimix/iks/ar-workable?${params.toString()}`, {
+            signal: controller.signal,
+        })
+            .then((response) => response.ok ? response.json() : Promise.reject(new Error(`Failed to load AR workable day metrics (${response.status})`)))
+            .then((data) => {
+                if (!isActive || data?.error) return
+                const normalized = {
+                    denials: Number(data.total_denials ?? data.actual_deny ?? 0),
+                    npnr: Number(data.npnr || 0),
+                    workable: Number(data.workable ?? data.total_workable ?? 0),
+                    workableBalance: Number(data.workable_charged_amt || 0),
+                    source: 'live_ar_workable',
+                }
+                dayMetricsCacheRef.current.set(cacheKey, normalized)
+                setLiveDayMetrics(normalized)
+            })
+            .catch((err) => {
+                if (!isActive || err.name === 'AbortError') return
+                console.warn('AR workable day metrics fetch failed:', err)
+                setLiveDayMetrics(null)
+            })
+
+        return () => {
+            isActive = false
+            controller.abort()
+        }
+    }, [normalizedSelectedDate, selectedClient, refreshToken])
 
     const npnrEntityRows = Array.isArray(npnrDetail?.by_entity) ? npnrDetail.by_entity : []
     const npnrRecords = Array.isArray(npnrDetail?.records) ? npnrDetail.records : []
 
     const viewData = useMemo(
-        () => mapWorkPlanPayload(payload, selectedMonth, npnrDetail?.summary || null),
-        [payload, selectedMonth, npnrDetail?.summary],
+        () => mapWorkPlanPayload(payload, selectedMonth, npnrDetail?.summary || null, normalizedSelectedDate, liveDayMetrics || dayActionableMetrics),
+        [payload, selectedMonth, npnrDetail?.summary, normalizedSelectedDate, liveDayMetrics, dayActionableMetrics],
     )
+
+    const chatContextPayload = useMemo(() => {
+        if (!payload) return null
+        return {
+            source: payload.source || 'live_bq',
+            as_of: payload.as_of || null,
+            selected_month: selectedMonth || null,
+            selected_date: normalizedSelectedDate || null,
+            summary: payload.summary || {},
+            today: payload.today || {},
+            later: payload.later || {},
+            inventory: payload.inventory || {},
+            protocol: payload.protocol || {},
+            trends: {
+                freshness: payload.trends?.freshness || {},
+                denial_shift: payload.trends?.denial_shift || {},
+            },
+            npnr_detail_summary: npnrDetail?.summary || {},
+            npnr_detail_filters: {
+                search: deferredNpnrSearch || '',
+                entity: npnrEntityFilter || '',
+                balance_scope: npnrBalanceFilter,
+            },
+        }
+    }, [payload, selectedMonth, normalizedSelectedDate, npnrDetail?.summary, deferredNpnrSearch, npnrEntityFilter, npnrBalanceFilter])
+
+    useEffect(() => {
+        if (typeof onContextChange !== 'function') return undefined
+        onContextChange(chatContextPayload)
+        return () => {
+            onContextChange(null)
+        }
+    }, [chatContextPayload, onContextChange])
+
+    const displayTrendData = useMemo(() => {
+        const trendData = payload?.trends?.main_trend || []
+        if (trendData.length === 0) return []
+        if (granularity === 'day') return trendData.slice(-31)
+        if (granularity === 'week') return trendData.slice(-12)
+        if (granularity === 'month') return trendData.slice(-12)
+        if (granularity === 'quarter') return trendData.slice(-8)
+        return trendData
+    }, [payload?.trends?.main_trend, granularity])
 
     const togglePanel = (panelKey) => {
         setCollapsedPanels((current) => ({
@@ -747,26 +1175,51 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
             <div className="iks-workplan__hero">
                 <div className="iks-workplan__hero-band" />
                 <div className="iks-workplan__top">
-                    <div className="iks-workplan__inventory-card iks-workplan-card">
+                    <div className="iks-workplan__inventory-card iks-workplan-card iks-workplan-card--expanded">
                         <div className="iks-workplan__eyebrow">
                             <span>{viewData.inventory.title}</span>
                             <span>{viewData.inventory.subtitle}</span>
                         </div>
-                    <div className="iks-workplan__inventory-value">
-                        <span>{viewData.inventory.volume}</span>
-                    </div>
-                    <div className="iks-workplan__inventory-metrics">
-                        {viewData.inventory.metrics.map((metric) => (
-                            <div
-                                key={metric.label}
-                                className={`iks-workplan__inventory-metric iks-workplan__inventory-metric--${metric.tone}${metric.fullWidth ? ' iks-workplan__inventory-metric--full' : ''}`}
-                            >
-                                <span>{metric.label}</span>
-                                <strong>{metric.value}</strong>
+                        <div className="iks-workplan__inventory-value-box iks-workplan__inventory-value-box--redesign">
+                            <div className="iks-workplan__inventory-value-group">
+                                <div className="iks-workplan__inventory-value" title="All open AR regardless of timeframe">
+                                    <span>{viewData.inventory.volume}</span>
+                                </div>
+                                <div className="iks-workplan__inventory-meta">
+                                    <span>{viewData.inventory.metaLabel}</span>
+                                    <strong>{viewData.inventory.metaValue}</strong>
+                                </div>
+                                {viewData.inventory.spotlightTags?.length > 0 && (
+                                    <div className="iks-workplan__volume-lines">
+                                        {viewData.inventory.spotlightTags.map((line) => (
+                                            <span key={line.label} className="iks-workplan__volume-tag">
+                                                <span className="iks-workplan__volume-tag-label">{line.label}:</span> {line.value}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        ))}
+                            <div className="iks-workplan__inventory-content-grid">
+                                <div className="iks-workplan__inventory-summary-list">
+                                    {viewData.inventory.metrics.map((metric) => (
+                                        <div
+                                            key={metric.label}
+                                            className={`iks-workplan__summary-row iks-workplan__summary-row--${metric.tone}`}
+                                            title={metric.detail || ''}
+                                        >
+                                            <span className="iks-workplan__summary-label">{metric.label}</span>
+                                            <strong className="iks-workplan__summary-value">
+                                                {metric.value}
+                                                {metric.amount ? <span className="iks-workplan__summary-balance">{metric.amount}</span> : null}
+                                            </strong>
+                                            {metric.detail ? <small className="iks-workplan__summary-detail">{metric.detail}</small> : null}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
+
 
                     <div className="iks-workplan__arrow" aria-hidden="true">
                         <ArrowRight size={20} />
@@ -797,18 +1250,20 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
                                         <ProgressRing value={viewData.today.progress} />
                                     </div>
                                     <div className="iks-workplan__today-stats">
-                                        <div className="iks-workplan__kv">
-                                            <span>{viewData.today.primaryLabel}</span>
-                                            <strong>{viewData.today.primaryValue}</strong>
-                                        </div>
-                                        <div className="iks-workplan__kv">
-                                            <span>{viewData.today.secondaryLabel}</span>
-                                            <strong>{viewData.today.secondaryValue}</strong>
+                                        <div className="iks-workplan__today-kpis">
+                                            <div className="iks-workplan__kv">
+                                                <span>{viewData.today.primaryLabel}</span>
+                                                <strong>{viewData.today.primaryValue}</strong>
+                                            </div>
+                                            <div className="iks-workplan__kv">
+                                                <span>{viewData.today.secondaryLabel}</span>
+                                                <strong>{viewData.today.secondaryValue}</strong>
+                                            </div>
                                         </div>
                                         <div className="iks-workplan__bucket-list">
                                             {viewData.today.buckets.map((bucket) => (
                                                 <div key={bucket.label} className={`iks-workplan__bucket iks-workplan__bucket--${bucket.tone}`}>
-                                                    <div>
+                                                    <div className="iks-workplan__bucket-copy">
                                                         <span>{bucket.label}</span>
                                                         <small>{bucket.meta}</small>
                                                     </div>
@@ -820,7 +1275,7 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
                                 </div>
                             </div>
 
-                            <div className="iks-workplan__later-card iks-workplan-card">
+                            <div className="iks-workplan__later-card iks-workplan-card iks-workplan-card--expanded">
                                 <div className="iks-workplan__later-backdrop" aria-hidden="true" />
                                 <div className="iks-workplan-card__header">
                                     <div>
@@ -834,7 +1289,7 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
                                     <span>{viewData.later.itttDate.label}</span>
                                     <strong>{viewData.later.itttDate.value}</strong>
                                     <small>{viewData.later.itttDate.detail}</small>
-                                    {typeof onOpenCalendarView === 'function' ? (
+                                    {viewData.later.itttDate.linkLabel && typeof onOpenCalendarView === 'function' ? (
                                         <button
                                             type="button"
                                             className="iks-workplan__later-link"
@@ -842,7 +1297,7 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
                                         >
                                             {viewData.later.itttDate.linkLabel}
                                         </button>
-                                    ) : (
+                                    ) : viewData.later.itttDate.linkLabel ? (
                                         <a
                                             className="iks-workplan__later-link"
                                             href={viewData.later.itttDate.linkHref}
@@ -851,13 +1306,13 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
                                         >
                                             {viewData.later.itttDate.linkLabel}
                                         </a>
-                                    )}
+                                    ) : null}
                                 </div>
-                                <div className="iks-workplan__later-list">
-                                    {viewData.later.items.map((item) => (
-                                        <div key={item.label} className="iks-workplan__later-item">
-                                            <div className="iks-workplan__later-copy">
-                                                <span>{item.label}</span>
+                            <div className="iks-workplan__later-list">
+                                {viewData.later.items.map((item) => (
+                                    <div key={item.label} className="iks-workplan__later-item">
+                                        <div className="iks-workplan__later-copy">
+                                            <span>{item.label}</span>
                                                 <small>{item.detail}</small>
                                             </div>
                                             <div className="iks-workplan__later-value-stack">
@@ -867,8 +1322,155 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
                                         </div>
                                     ))}
                                 </div>
+                                <div className="iks-workplan__about-card iks-workplan__about-card--compact">
+                                    <div className="iks-workplan__about-title">{viewData.aboutKpis.title}</div>
+                                    <p>{viewData.aboutKpis.text}</p>
+                                </div>
+                            </div>
+
+                            <div className="iks-workplan__worked-card iks-workplan-card">
+                                <div className="iks-workplan__worked-section">
+                                    <div className="iks-workplan__section-title">{viewData.breakdown.title}</div>
+                                    <div className="iks-workplan__inventory-breakdown-grid iks-workplan__inventory-breakdown-grid--hero">
+                                        <BreakdownDonut title="By Age" items={viewData.breakdown.age} />
+                                        <BreakdownDonut title="By Propensity" items={viewData.breakdown.propensity} />
+                                    </div>
+                                </div>
+                                <div className="iks-workplan__worked-section">
+                                    <div className="iks-workplan__section-title">{viewData.workedStatus.title}</div>
+                                <div className="iks-workplan__worked-grid">
+                                    {viewData.workedStatus.cards.map((card) => (
+                                        <div key={card.label} className="iks-workplan__worked-pill">
+                                            <span>{card.label}</span>
+                                            <strong>{card.value}</strong>
+                                            <small>{card.share}</small>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="iks-workplan__worked-breakdown">
+                                    {viewData.workedStatus.breakdown.map((item) => (
+                                        <div key={item.label} className="iks-workplan__worked-breakdown-card">
+                                            <span>{item.label}</span>
+                                            <strong>{item.value}</strong>
+                                            <small>{item.share}</small>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="iks-workplan__worked-footnote">{viewData.workedStatus.footnote}</div>
+                                </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="iks-workplan__main-trend-row">
+                <div className="iks-workplan-card iks-workplan__main-trend-card">
+                    <div className="iks-workplan-card__header">
+                        <div className="iks-workplan__trend-title-box">
+                            <div className="iks-workplan__trend-icon"><Activity size={18} /></div>
+                            <div>
+                                <h3>Actionable Claims Trend</h3>
+                                <p>Historical visibility of Denials and NPNR buckets by period</p>
+                            </div>
+                        </div>
+                        <div className="iks-workplan__granularity-switcher">
+                            {['day', 'week', 'month', 'quarter', 'year'].map((g) => (
+                                <button
+                                    key={g}
+                                    type="button"
+                                    className={granularity === g ? 'active' : ''}
+                                    onClick={() => setGranularity(g)}
+                                >
+                                    {g.charAt(0).toUpperCase() + g.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="iks-workplan__trend-chart-box">
+                        <div className="iks-workplan__trend-overlay">
+                            <div className="iks-workplan__trend-overlay-header">
+                                <span className="iks-workplan__trend-overlay-title">AR Balance Trends</span>
+                            </div>
+                            <div className="iks-workplan__trend-overlay-grid">
+                                {viewData.inventory.cadence.map((item) => {
+                                    const trendValue = Number(item.trend)
+                                    const hasTrend = hasTrendValue(item.trend)
+                                    return (
+                                        <div key={item.label} className="iks-workplan__trend-overlay-card">
+                                            <span className="iks-workplan__trend-overlay-label">{item.label}</span>
+                                            <strong className="iks-workplan__trend-overlay-value">{item.value}</strong>
+                                            <div className="iks-workplan__trend-overlay-meta">
+                                                {hasTrend ? (
+                                                    <span className={`iks-workplan__trend-overlay-trend ${trendValue >= 0 ? 'is-up' : 'is-down'}`}>
+                                                        {trendValue >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                                                        {Math.abs(trendValue).toFixed(1)}%
+                                                    </span>
+                                                ) : (
+                                                    <span className="iks-workplan__trend-overlay-trend is-flat">No change</span>
+                                                )}
+                                                <small className="iks-workplan__trend-overlay-detail">{item.detail}</small>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                        <ResponsiveContainer width="100%" height={260}>
+                            <AreaChart data={displayTrendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#68eeff" stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor="#68eeff" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                                <XAxis
+                                    dataKey="period"
+                                    stroke="rgba(255,255,255,0.4)"
+                                    fontSize={10}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={(str) => {
+                                        if (!str) return '';
+                                        try {
+                                            if (granularity === 'day') return str.slice(8, 10);
+                                            const date = new Date(str + (str.length === 10 ? 'T00:00:00' : ''));
+                                            if (isNaN(date.getTime())) return str;
+                                            if (granularity === 'month') return date.toLocaleDateString('en-US', { month: 'short' });
+                                            if (granularity === 'quarter') {
+                                                const q = Math.floor(date.getMonth() / 3) + 1;
+                                                return `Q${q}`;
+                                            }
+                                            if (granularity === 'year') return date.getFullYear().toString();
+                                            return str.slice(0, 10);
+                                        } catch (e) {
+                                            return str;
+                                        }
+                                    }}
+                                />
+                                <YAxis
+                                    stroke="rgba(255,255,255,0.4)"
+                                    fontSize={10}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={(val) => formatClaimPool(val)}
+                                />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: 'rgba(30, 41, 59, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
+                                    itemStyle={{ color: '#fff' }}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="count"
+                                    stroke="#68eeff"
+                                    strokeWidth={3}
+                                    fillOpacity={1}
+                                    fill="url(#colorCount)"
+                                    animationDuration={1500}
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
             </div>
@@ -933,19 +1535,22 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
                     {!collapsedPanels.denialShift && (
                         <>
                             <div className="iks-workplan__denial-headline">{viewData.denialShift.headline}</div>
-                            <div className="iks-workplan__signal-strip iks-workplan__signal-strip--tight">
-                                {viewData.denialShift.highlights.map((highlight) => (
-                                    <div
-                                        key={highlight.label}
+	                            <div className="iks-workplan__signal-strip iks-workplan__signal-strip--tight">
+	                                {viewData.denialShift.highlights.map((highlight) => (
+	                                    <div
+	                                        key={highlight.label}
                                         className={`iks-workplan__signal-card iks-workplan__signal-card--${highlight.tone}`}
                                     >
                                         <span>{highlight.label}</span>
                                         <strong>{highlight.value}</strong>
                                         <small>{highlight.detail}</small>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="iks-workplan__denial-list">
+	                                    </div>
+	                                ))}
+	                            </div>
+	                            {viewData.denialShift.note ? (
+	                                <div className="iks-workplan__denial-note">{viewData.denialShift.note}</div>
+	                            ) : null}
+	                            <div className="iks-workplan__denial-list">
                                 {viewData.denialShift.rows.length > 0 ? viewData.denialShift.rows.map((row) => (
                                     <DenialShiftRow key={row.code} row={row} />
                                 )) : (
@@ -1016,6 +1621,15 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
                                     </small>
                                 </div>
                             ))}
+                            {npnrDetail?.summary?.patient_responsibility?.count > 0 && (
+                                <div className="iks-workplan__entity-chip iks-workplan__entity-chip--patient-resp">
+                                    <span>{npnrDetail.summary.patient_responsibility.label || 'Patient Responsibility'}</span>
+                                    <strong>{formatNumber(npnrDetail.summary.patient_responsibility.count)}</strong>
+                                    <small>
+                                        Excluded from NPNR • {formatCurrencyCompact(npnrDetail.summary.patient_responsibility.amount || 0)}
+                                    </small>
+                                </div>
+                            )}
                         </div>
                     ) : null}
 
@@ -1045,6 +1659,17 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
                                 </option>
                             ))}
                         </select>
+                        <select
+                            className="iks-workplan__npnr-select"
+                            value={npnrBalanceFilter}
+                            onChange={(event) => {
+                                setNpnrBalanceFilter(event.target.value)
+                                setNpnrPage(1)
+                            }}
+                        >
+                            <option value="open">Open Balance Only</option>
+                            <option value="zero">Zero Balance Only</option>
+                        </select>
                     </div>
 
                     {npnrDetailError ? (
@@ -1057,6 +1682,7 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
                 <span>Financial Class</span>
                 <span>Responsible Entity</span>
                 <span>Last Bill</span>
+                <span className="iks-workplan-table__header-cell--numeric">Avg Pay Date</span>
                 <span className="iks-workplan-table__header-cell--numeric">Claim Age</span>
                 <span className="iks-workplan-table__header-cell--numeric iks-workplan-table__header-cell--amount">Amount</span>
             </div>
@@ -1066,12 +1692,14 @@ export default function WorkPlanView({ selectedMonth = '', selectedClient = '', 
                             ) : null}
                             {!npnrDetailLoading && npnrRecords.length > 0 ? npnrRecords.map((record) => (
                                 <NpnrDetailRow
-                                    key={`${record.optimix_enc_number || record.ds_enc_number || record.encounter_number}-${record.last_status_code || 'none'}`}
+                                    key={`${record.payer_name || record.encounter_number}-${record.responsible_entity || 0}-${record.count || 0}`}
                                     record={record}
                                 />
                             )) : null}
                             {!npnrDetailLoading && !npnrRecords.length ? (
-                                <div className="iks-workplan-table__empty">No NPNR detail rows found for the current filters.</div>
+                                <div className="iks-workplan-table__empty">
+                                    No NPNR detail rows found for the current filters{npnrBalanceFilter === 'zero' ? ' in the zero-balance view' : ''}.
+                                </div>
                             ) : null}
                         </div>
                     </div>

@@ -161,6 +161,24 @@ const isAllPhaseSelection = (value) => {
 
 const toUiPhaseValue = (value) => (isAllPhaseSelection(value) ? ALL_PHASES_LABEL : String(value || '').trim())
 
+const getEasternDateKey = () => {
+    try {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/New_York',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).formatToParts(new Date())
+        const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]))
+        if (lookup.year && lookup.month && lookup.day) {
+            return `${lookup.year}-${lookup.month}-${lookup.day}`
+        }
+    } catch {
+        // fall back to browser local date if Intl/timezone formatting is unavailable
+    }
+    return new Date().toISOString().slice(0, 10)
+}
+
 const toUiPhaseOptions = (values) => {
     const specific = Array.from(new Set(
         (Array.isArray(values) ? values : [])
@@ -261,7 +279,13 @@ const METRIC_COLUMNS = [
     { label: 'Payment But Denied', dayKey: 'payment_but_denied', totalKey: 'Payment_But_Denied', tooltip: 'Claims predicted to be paid, but actually denied. This is a tracked subset of Denial Actual, not an extra denial bucket.' }
 ]
 
-const formatNumber = (value) => new Intl.NumberFormat('en-US').format(Number(value || 0))
+const formatNumber = (value) => {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return '-'
+    return new Intl.NumberFormat('en-US', {
+        notation: 'compact',
+        maximumFractionDigits: 1
+    }).format(Number(value || 0))
+}
 
 const formatDollar = (value) => {
     const num = Number(value || 0)
@@ -271,8 +295,9 @@ const formatDollar = (value) => {
 }
 
 const formatPercent = (value) => {
-    if (value === null || value === undefined || Number.isNaN(Number(value))) return 'N/A'
-    return `${Number(value).toFixed(2)}%`
+    const num = Number(value)
+    if (value === null || value === undefined || Number.isNaN(num) || num <= 0) return '--'
+    return `${num.toFixed(1)}%`
 }
 
 const formatAxisDate = (dateString) => {
@@ -372,17 +397,25 @@ const getCalculatedBacklogBalance = (arBacklogTrend, dateStr, type = 'day') => {
 }
 
 const getTrendClass = (delta) => {
-    if (delta === null || delta === undefined) return ''
-    if (delta > 0) return 'positive'
-    if (delta < 0) return 'negative'
+    const numeric = Number(delta)
+    if (!Number.isFinite(numeric) || Math.abs(numeric) < 0.005) return ''
+    if (numeric > 0) return 'positive'
+    if (numeric < 0) return 'negative'
     return ''
 }
 
 const getTrendArrow = (delta) => {
-    if (delta === null || delta === undefined) return ''
-    if (delta > 0) return '↑'
-    if (delta < 0) return '↓'
-    return '→'
+    const numeric = Number(delta)
+    if (!Number.isFinite(numeric) || Math.abs(numeric) < 0.005) return ''
+    if (numeric > 0) return '↑'
+    if (numeric < 0) return '↓'
+    return ''
+}
+
+const formatAccuracyDelta = (delta) => {
+    const numeric = Number(delta)
+    if (!Number.isFinite(numeric) || Math.abs(numeric) < 0.005) return ''
+    return `${getTrendArrow(numeric)} ${Math.abs(numeric).toFixed(2)}`
 }
 
 const MONTH_TOKEN_MAP = {
@@ -580,7 +613,7 @@ const generateChatbotReply = ({
 
     // --- Graph / chart explanation ---
     if (q.includes('graph') || q.includes('chart') || q.includes('trend')) {
-        return 'The charts at the bottom show how things change over time:\n\n📈 Prediction vs Response — compares how many claims we sent vs how many answers we got. A big gap means many claims are still unanswered.\n\n💰 Payment & Denial Outcomes — shows actual money received vs claims rejected each day. Helps you tell if collections are healthy.\n\n📊 Workable Trend — shows how many claims need follow-up. Rising line = growing backlog.'
+        return 'The charts at the bottom show how things change over time:\n\n📈 Prediction vs Response — compares how many claims we sent vs how many answers we got. A big gap means many claims are still unanswered.\n\n💰 Payment & Denial Outcomes — shows actual money received vs claims rejected each day. Helps you tell if collections are healthy.\n\n📊 Actionable Trend — shows how many claims need follow-up. Rising line = growing backlog.'
     }
 
     // --- Calendar explanation ---
@@ -590,7 +623,7 @@ const generateChatbotReply = ({
 
     // --- Where to start ---
     if (q.includes('where') && (q.includes('start') || q.includes('explore') || q.includes('begin'))) {
-        return 'Here\'s how to explore this dashboard:\n1️⃣ Check the KPI cards at top — are accuracy percentages going up or down?\n2️⃣ Pick a month from the calendar — click any day to see details\n3️⃣ Look at the Day Snapshot — it shows exactly what happened that day\n4️⃣ Scroll down to charts — look for gaps between predictions and actual results\n5️⃣ Check Total Workable — lower is better (fewer claims need follow-up)'
+        return 'Here\'s how to explore this dashboard:\n1️⃣ Check the KPI cards at top — are accuracy percentages going up or down?\n2️⃣ Pick a month from the calendar — click any day to see details\n3️⃣ Look at the Day Snapshot — it shows exactly what happened that day\n4️⃣ Scroll down to charts — look for gaps between predictions and actual results\n5️⃣ Check Actionable Claims — lower is better (fewer claims need follow-up)'
     }
 
     // --- Total Billed query ---
@@ -600,7 +633,7 @@ const generateChatbotReply = ({
 
     // --- Total Workable for month ---
     if ((q.includes('total workable') || q.includes('workable')) && monthData && (q.includes('for') || q.includes('month'))) {
-        return `🔧 Total Workable for ${monthLabel}: ${formatNumber(getDisplayedWorkableValue(monthData?.totals))} claims need a person to take follow-up action.`
+        return `🔧 Actionable Claims for ${monthLabel}: ${formatNumber(getDisplayedWorkableValue(monthData?.totals))} claims need a person to take follow-up action.`
     }
 
     // --- Highest workable month ---
@@ -688,7 +721,7 @@ const generateChatbotReply = ({
         return 'To compare months: look at the month cards in the Workable Forecast section — each shows Total Workable, prediction volume, and response volume. Or check the KPI accuracy arrows (↑/↓) to see if things improved or got worse compared to the previous month.'
     }
 
-    return '🤔 I\'m not sure about that one. Try asking about:\n• "What is Total Workable?" or "Explain the formula"\n• "Show accuracy for this month"\n• "What does the calendar show?"\n• "Which month had the most work?"\n• "What is ITTT?" or "Explain the KPI cards"\n• "What does the pipeline show?"\n• "What is AR backlog?"'
+    return '🤔 I\'m not sure about that one. Try asking about:\n• "What are Actionable Claims?" or "Explain the formula"\n• "Show accuracy for this month"\n• "What does the calendar show?"\n• "Which month had the most work?"\n• "What is ITTT?" or "Explain the KPI cards"\n• "What does the pipeline show?"\n• "What is AR backlog?"'
 }
 
 const buildCalendarCells = (monthKey, dailyRecords) => {
@@ -766,9 +799,10 @@ function OptimixIKSInsights({ embedded = false }) {
 
     const [arBacklog, setArBacklog] = useState(null)
     const [activeTab, setActiveTab] = useState('trends')
-    const [persona, setPersona] = useState('ops-manager') // 'ops-manager' | 'sr-leader' | 'work-plan'
+    const [persona, setPersona] = useState('work-plan') // 'ops-manager' | 'sr-leader' | 'work-plan'
     const [calcBasis, setCalcBasis] = useState('ittt')    // 'ittt' | 'ar'
     const [opsFlowLive, setOpsFlowLive] = useState(null)  // live ops-flow API result
+    const [workPlanChatContext, setWorkPlanChatContext] = useState(null)
 
     const fetchInsights = async (refresh = false, clientOverride = null) => {
         try {
@@ -1051,10 +1085,23 @@ function OptimixIKSInsights({ embedded = false }) {
             setSelectedDate('')
             return
         }
-        setSelectedDate((prev) => (
-            chartData.some((item) => item.date === prev) ? prev : chartData[0].date
-        ))
-    }, [chartData])
+        const easternToday = getEasternDateKey()
+        const isCurrentMonth = selectedMonth === easternToday.slice(0, 7)
+        const latestAvailableDate = chartData[chartData.length - 1]?.date || chartData[0].date
+
+        setSelectedDate((prev) => {
+            if (chartData.some((item) => item.date === prev)) {
+                return prev
+            }
+            if (isCurrentMonth && chartData.some((item) => item.date === easternToday)) {
+                return easternToday
+            }
+            if (isCurrentMonth) {
+                return latestAvailableDate
+            }
+            return chartData[0].date
+        })
+    }, [chartData, selectedMonth])
 
     const selectedDayData = useMemo(
         () => chartData.find((item) => item.date === selectedDate) || null,
@@ -1153,6 +1200,7 @@ function OptimixIKSInsights({ embedded = false }) {
 
         const context = {
             client: selectedClient,
+            persona, // 'ops-manager', 'sr-leader', or 'work-plan'
             month_label: selectedMonthData?.label || formatMonthKeyLabel(selectedMonth),
             month_key: selectedMonth,
             year: selectedYear,
@@ -1178,6 +1226,7 @@ function OptimixIKSInsights({ embedded = false }) {
             daily_records: (selectedMonthData?.daily || []).slice(0, 31),
             // Record count
             record_count: selectedMonthData?.record_count || 0,
+            workplan: workPlanChatContext || null,
         }
 
         try {
@@ -1205,7 +1254,7 @@ function OptimixIKSInsights({ embedded = false }) {
 
         // Local fallback when backend is unreachable
         const reply = generateChatbotReply({
-            question: text,
+            question: queryText,
             insights,
             selectedMonth,
             selectedMonthData,
@@ -1271,7 +1320,7 @@ function OptimixIKSInsights({ embedded = false }) {
             : 0
         const anomalyCount = workableValues.filter(v => Math.abs(v - mean) > 1.5 * stdDev).length
 
-        let primary = `${label}: ${formatNumber(workable)} Total Workable in current scope`
+        let primary = `${label}: ${formatNumber(workable)} Actionable Claims in current scope`
         if (workableDelta !== null) {
             const arrow = Number(workableDelta) > 0 ? '↑' : Number(workableDelta) < 0 ? '↓' : '→'
             primary += ` — ${arrow}${Math.abs(Number(workableDelta))}% vs last month`
@@ -1492,6 +1541,23 @@ function OptimixIKSInsights({ embedded = false }) {
         return displayedWorkableFormulaParts
     }, [calcBasis, opsFlowData, displayedWorkableFormulaParts])
 
+    const selectedDayActionableMetrics = useMemo(() => {
+        if (detailsView !== 'day' || !selectedDate) return null
+        return {
+            denials: Number(calcBasis === 'ar' ? opsFlowData.denials : workableFormulaParts.denialActual || 0),
+            npnr: Number(calcBasis === 'ar' ? opsFlowData.npnr : workableFormulaParts.thirdExpired || 0),
+            workable: Number(calcBasis === 'ar' ? opsFlowData.workable : workableFormulaParts.result || 0),
+            workableBalance: Number(opsFlowLive?.workable_charged_amt || 0),
+        }
+    }, [detailsView, selectedDate, calcBasis, opsFlowData, workableFormulaParts, opsFlowLive])
+
+    const insightsSource = String(insights?.cache?.source || insights?.source || '').toLowerCase()
+    const insightsLastUpdated = insights?.cache?.last_updated
+    const isInsightsMock = insightsSource.includes('mock')
+    const insightsStatusLabel = isInsightsMock
+        ? 'Offline Mock'
+        : (insights?.cache?.stale ? 'Live Cache' : 'Live')
+
     if (loading && !insights) {
         return (
             <div className={`optimix-iks-container ${embedded ? 'embedded' : ''}`}>
@@ -1541,8 +1607,13 @@ function OptimixIKSInsights({ embedded = false }) {
                         IKS Claim Insights
                         <span className="iks-live-dot" />
                     </h1>
-                    {insights?.cache?.last_updated ? (
-                        <p className="optimix-iks-last-updated">Last synced: {new Date(insights.cache.last_updated).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })} EST (Offline Mock)</p>
+                    {insightsLastUpdated ? (
+                        <p
+                            className="optimix-iks-last-updated"
+                            style={isInsightsMock ? undefined : { color: '#10b981', fontWeight: 500 }}
+                        >
+                            Last synced: {new Date(insightsLastUpdated).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })} EST ({insightsStatusLabel})
+                        </p>
                     ) : (
                         <p className="optimix-iks-last-updated" style={{ color: '#10b981', fontWeight: 500 }}>
                             • Live Data Refreshed: {new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })} EST
@@ -1619,7 +1690,7 @@ function OptimixIKSInsights({ embedded = false }) {
                         className={calcBasis === 'ittt' ? 'active' : ''}
                         onClick={() => setCalcBasis('ittt')}
                     >
-                        DS Model Workable
+                        Actionable Claims
                     </button>
                     <button
                         type="button"
@@ -1631,7 +1702,7 @@ function OptimixIKSInsights({ embedded = false }) {
                 </div>
                 <span className="iks-calc-basis-desc">
                     {calcBasis === 'ittt'
-                        ? 'DS Model — Third Prediction Expired No Response + Denial Actual'
+                        ? 'Actionable Claims — Third Prediction Expired No Response + Denial Actual'
                         : 'AR Bucket — Actual Deny + Third Prediction Expired No Response from the AR workflow cohort'}
                 </span>
             </div>
@@ -1642,8 +1713,8 @@ function OptimixIKSInsights({ embedded = false }) {
                 <div className="iks-hero-card iks-hero-card--workable">
                     <div className="iks-hero-label">
                         {calcBasis === 'ar'
-                            ? <>AR Workable <Tip text="Claims needing follow-up in the AR workflow cohort: Actual Deny + Third Prediction Expired No Response." /></>
-                            : <>Total Workable <Tip text="Actionable workable: Third Prediction Expired No Response + Denial Actual." /></>
+                            ? <>Actionable Claims (AR) <Tip text="Claims needing follow-up in the AR workflow cohort: Actual Deny + Third Prediction Expired No Response." /></>
+                            : <>Actionable Claims <Tip text="Actionable workable: Third Prediction Expired No Response + Denial Actual." /></>
                         }
                     </div>
                     <div className="iks-hero-value iks-hero-value--cyan">
@@ -1658,7 +1729,7 @@ function OptimixIKSInsights({ embedded = false }) {
                         </div>
                     )}
                     <div className="iks-hero-subtitle">
-                        {calcBasis === 'ar' ? 'Claims needing AR follow-up' : 'Claims needing follow-up'}
+                        {calcBasis === 'ar' ? 'Claims needing follow-up' : 'Actionable Claims'}
                     </div>
                 </div>
 
@@ -1673,9 +1744,11 @@ function OptimixIKSInsights({ embedded = false }) {
                             ragClass={getRAGColor(Number(selectedMonthData?.cards?.payment?.accuracy_pct || 0), { green: 50, amber: 50 })}
                         />
                         <div className="iks-radial-ring-info">
-                            <div className={`iks-hero-delta ${getTrendClass(selectedMonthData?.cards?.payment?.accuracy_delta_pct_points)}`}>
-                                {getTrendArrow(selectedMonthData?.cards?.payment?.accuracy_delta_pct_points)} {selectedMonthData?.cards?.payment?.accuracy_delta_pct_points != null ? Math.abs(selectedMonthData.cards.payment.accuracy_delta_pct_points).toFixed(2) : 'N/A'}
-                            </div>
+                            {formatAccuracyDelta(selectedMonthData?.cards?.payment?.accuracy_delta_pct_points) ? (
+                                <div className={`iks-hero-delta ${getTrendClass(selectedMonthData?.cards?.payment?.accuracy_delta_pct_points)}`}>
+                                    {formatAccuracyDelta(selectedMonthData?.cards?.payment?.accuracy_delta_pct_points)}
+                                </div>
+                            ) : null}
                             <div className="iks-hero-subtitle">{formatNumber(selectedMonthData?.cards?.payment?.prediction || 0)} predicted</div>
                         </div>
                     </div>
@@ -1692,9 +1765,11 @@ function OptimixIKSInsights({ embedded = false }) {
                             ragClass={getRAGColor(Number(selectedMonthData?.cards?.denial?.accuracy_pct || 0), { green: 50, amber: 50 })}
                         />
                         <div className="iks-radial-ring-info">
-                            <div className={`iks-hero-delta ${getTrendClass(selectedMonthData?.cards?.denial?.accuracy_delta_pct_points)}`}>
-                                {getTrendArrow(selectedMonthData?.cards?.denial?.accuracy_delta_pct_points)} {selectedMonthData?.cards?.denial?.accuracy_delta_pct_points != null ? Math.abs(selectedMonthData.cards.denial.accuracy_delta_pct_points).toFixed(2) : 'N/A'}
-                            </div>
+                            {formatAccuracyDelta(selectedMonthData?.cards?.denial?.accuracy_delta_pct_points) ? (
+                                <div className={`iks-hero-delta ${getTrendClass(selectedMonthData?.cards?.denial?.accuracy_delta_pct_points)}`}>
+                                    {formatAccuracyDelta(selectedMonthData?.cards?.denial?.accuracy_delta_pct_points)}
+                                </div>
+                            ) : null}
                             <div className="iks-hero-subtitle">{formatNumber(selectedMonthData?.cards?.denial?.prediction || 0)} predicted</div>
                         </div>
                     </div>
@@ -1926,10 +2001,10 @@ function OptimixIKSInsights({ embedded = false }) {
                     className="optimix-iks-formula-popover"
                     style={{ left: formulaPopover.x, top: formulaPopover.y }}
                 >
-                    <div className="optimix-iks-fp-title">Workable Breakdown</div>
+                    <div className="optimix-iks-fp-title">Actionable Claims Breakdown</div>
                     <div className="optimix-iks-fp-row"><span>Third Pred. Expired No Response</span><strong>{formatNumber(formulaPopover.parts.thirdExpired)}</strong></div>
                     <div className="optimix-iks-fp-row"><span>+ Denial Actual</span><strong>{formatNumber(formulaPopover.parts.denialActual)}</strong></div>
-                    <div className="optimix-iks-fp-result"><span>= Workable</span><strong>{formatNumber(formulaPopover.parts.result)}</strong></div>
+                    <div className="optimix-iks-fp-result"><span>= Actionable Claims</span><strong>{formatNumber(formulaPopover.parts.result)}</strong></div>
                 </div>
             )}
 
@@ -1997,7 +2072,7 @@ function OptimixIKSInsights({ embedded = false }) {
 
                             {/* Workable Trend */}
                             <div className="iks-chart-card">
-                                <h4>Workable Trend</h4>
+                                <h4>Actionable Claims Trend</h4>
                                 <p>Total workable claims over the month — rising line = growing backlog</p>
                                 <ResponsiveContainer width="100%" height={220}>
                                     <AreaChart data={chartData}>
@@ -2115,7 +2190,7 @@ function OptimixIKSInsights({ embedded = false }) {
 
                                         {/* Workable Breakdown Group */}
                                         <div className="iks-metric-group iks-metric-group--workable">
-                                            <h5>Workable Breakdown</h5>
+                                            <h5>Actionable Claims Breakdown</h5>
                                             <div className="iks-metric-row">
                                                 <span>No Response (Expired) <Tip text={METRIC_COLUMNS[4].tooltip} /></span>
                                                 <strong>{formatNumber(detailsView === 'day' ? selectedDayData?.third_prediction_expired_no_response : selectedMonthData?.totals?.ThirdPredictionExpired_NoResponse)}</strong>
@@ -2129,7 +2204,7 @@ function OptimixIKSInsights({ embedded = false }) {
                                                 <strong>{formatNumber(detailsView === 'day' ? selectedDayData?.payment_but_denied : selectedMonthData?.totals?.Payment_But_Denied)}</strong>
                                             </div>
                                             <div className="iks-metric-row total">
-                                                <span>Total Workable</span>
+                                                <span>Total Actionable Claims</span>
                                                 <strong>{formatNumber(detailsView === 'day' ? selectedDayData?.total_workable : workableFormulaParts.result)}</strong>
                                             </div>
                                             <div className="iks-formula-text">
@@ -2200,7 +2275,7 @@ function OptimixIKSInsights({ embedded = false }) {
                                             <div className="value">{formatNumber(yearlyForecast.Total_Prediction)}</div>
                                         </div>
                                         <div className="iks-yearly-card">
-                                            <div className="label">Total Workable Volume</div>
+                                            <div className="label">Total Actionable Claims Volume</div>
                                             <div className="value">{formatNumber(yearlyForecast.Total_Workable)}</div>
                                         </div>
                                         <div className="iks-yearly-card">
@@ -2322,7 +2397,10 @@ function OptimixIKSInsights({ embedded = false }) {
                     selectedMonth={selectedMonth}
                     selectedClient={selectedClient}
                     refreshToken={personaRefreshToken}
+                    onContextChange={setWorkPlanChatContext}
                     onOpenCalendarView={openArWorkableCalendarView}
+                    selectedDate={detailsView === 'day' ? selectedDate : ''}
+                    dayActionableMetrics={selectedDayActionableMetrics}
                 />
             )}
 

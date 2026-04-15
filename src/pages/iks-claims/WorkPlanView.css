@@ -1,4 +1,27 @@
+
+[data-theme="light"] .iks-workplan {
+    --iks-workplan-bg: #f8fafc;
+    --iks-workplan-bg-gradient: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 36%, #ffffff 100%);
+    --iks-workplan-card: #ffffff;
+    --iks-workplan-card-soft: #f8fafc;
+    --iks-workplan-border: rgba(15, 23, 42, 0.08);
+    --iks-workplan-border-strong: rgba(15, 23, 42, 0.22);
+    --iks-workplan-text: #0f172a;
+    --iks-workplan-muted: #64748b;
+    --iks-workplan-subtle: #94a3b8;
+    --iks-workplan-cyan: #0284c7;
+    --iks-workplan-cyan-soft: rgba(2, 132, 199, 0.08);
+    --iks-workplan-green: #059669;
+    --iks-workplan-amber: #d97706;
+    --iks-workplan-red: #e11d48;
+    --iks-workplan-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+    --iks-workplan-glass: rgba(15, 23, 42, 0.85);
+}
+
 .iks-workplan {
+    --iks-workplan-bg-gradient: var(--iks-workplan-bg-gradient);
+    --iks-workplan-glass: rgba(15, 21, 25, 0.85);
+
     --iks-workplan-bg: #0f1519;
     --iks-workplan-card: #171d22;
     --iks-workplan-card-soft: #1b2228;
@@ -22,7 +45,8 @@
     --iks-workplan-number-medium-size: 1.08rem;
     --iks-workplan-number-compact-size: 0.94rem;
     --iks-workplan-number-weight: 700;
-    --iks-workplan-number-letter: -0.03em;
+    --iks-workplan-number-letter: 0;
+    --iks-workplan-detail-grid: minmax(280px, 2fr) minmax(180px, 1.18fr) minmax(126px, 0.82fr) minmax(118px, 0.78fr) minmax(126px, 0.82fr) minmax(92px, 0.62fr) minmax(118px, 0.74fr);
     position: relative;
     max-width: 1280px;
     margin: 0 auto;
@@ -32,7 +56,7 @@
     background:
         radial-gradient(circle at top right, rgba(104, 238, 255, 0.1), transparent 28%),
         radial-gradient(circle at bottom left, rgba(40, 211, 138, 0.1), transparent 30%),
-        linear-gradient(180deg, #091216 0%, #0d161b 36%, #0b1418 100%);
+        var(--iks-workplan-bg-gradient);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -60,7 +84,7 @@
 
 .iks-workplan::after {
     inset: 0;
-    background-image: linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(15, 23, 42, 0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(15, 23, 42, 0.022) 1px, transparent 1px);
     background-size: 120px 120px;
     opacity: 0.2;
     mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.5), transparent 92%);
@@ -87,9 +111,9 @@
 .iks-workplan-card {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)) var(--iks-workplan-card);
-    border: 1px solid rgba(255, 255, 255, 0.045);
-    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.018), rgba(15, 23, 42, 0)) var(--iks-workplan-card);
+    border: 1px solid rgba(15, 23, 42, 0.045);
+    border-radius: 8px;
     box-shadow: 0 14px 26px rgba(0, 0, 0, 0.18);
 }
 
@@ -109,9 +133,8 @@
 
 .iks-workplan__top {
     position: relative;
-    display: grid;
-    grid-template-columns: minmax(190px, 250px) 32px minmax(0, 1fr);
-    gap: var(--iks-workplan-space-md);
+    display: flex;
+    gap: var(--iks-workplan-space-lg);
     align-items: stretch;
 }
 
@@ -123,7 +146,7 @@
     background:
         linear-gradient(135deg, rgba(104, 238, 255, 0.055), transparent 28%),
         linear-gradient(180deg, rgba(6, 18, 23, 0.94), rgba(11, 22, 28, 0.86));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.03);
 }
 
 .iks-workplan__hero-band {
@@ -138,6 +161,27 @@
 .iks-workplan__inventory-card {
     min-height: 184px;
     padding: var(--iks-workplan-card-pad);
+    flex: 1.65;
+}
+
+.iks-workplan-card--expanded {
+    background: var(--iks-workplan-card);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.iks-workplan-card--expanded:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 25px 50px rgba(104, 238, 255, 0.05), 0 20px 40px rgba(0, 0, 0, 0.4);
+    border-color: rgba(104, 238, 255, 0.15);
+}
+
+.iks-workplan__inventory-value-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: calc(100% - 24px);
+    gap: var(--iks-workplan-space-md);
 }
 
 .iks-workplan__today-card {
@@ -169,6 +213,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--iks-workplan-space-sm);
+    flex: 2;
 }
 
 .iks-workplan__heading {
@@ -235,8 +280,8 @@
 
 .iks-workplan__inventory-metrics {
     margin-top: var(--iks-workplan-space-sm);
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: var(--iks-workplan-space-xs);
 }
 
@@ -248,8 +293,8 @@
     gap: 6px;
     padding: 10px 12px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.026);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(15, 23, 42, 0.026);
+    border: 1px solid rgba(15, 23, 42, 0.05);
     min-width: 0;
     overflow: hidden;
 }
@@ -263,6 +308,13 @@
     letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--iks-workplan-muted);
+}
+
+.iks-workplan__metric-detail {
+    font-size: 0.6rem;
+    color: var(--iks-workplan-subtle);
+    line-height: 1.3;
+    margin-top: 2px;
 }
 
 .iks-workplan__inventory-metric strong {
@@ -299,15 +351,17 @@
 
 .iks-workplan-card__header h3 {
     font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
-    font-size: 1.05rem;
-    letter-spacing: -0.03em;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 0;
     margin: 0;
     color: var(--iks-workplan-text);
 }
 
 .iks-workplan-card__header p {
     margin-top: 2px;
-    font-size: 0.68rem;
+    font-size: 0.7rem;
+    line-height: 1.45;
     color: var(--iks-workplan-muted);
 }
 
@@ -325,6 +379,9 @@
 .iks-workplan__later-card {
     min-height: 184px;
     padding: var(--iks-workplan-card-pad);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .iks-workplan__later-backdrop {
@@ -341,8 +398,8 @@
 .iks-workplan__today-body {
     margin-top: 14px;
     display: grid;
-    grid-template-columns: 78px minmax(0, 1fr);
-    gap: var(--iks-workplan-space-md);
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: var(--iks-workplan-space-lg);
     align-items: center;
 }
 
@@ -352,7 +409,7 @@
     border-radius: 50%;
     background:
         radial-gradient(circle at center, rgba(23, 29, 34, 1) 58%, transparent 59%),
-        conic-gradient(var(--iks-workplan-cyan) var(--iks-workplan-progress), rgba(255, 255, 255, 0.08) 0);
+        conic-gradient(var(--iks-workplan-cyan) var(--iks-workplan-progress), rgba(15, 23, 42, 0.08) 0);
     display: grid;
     place-items: center;
 }
@@ -364,7 +421,7 @@
     display: grid;
     place-items: center;
     background: rgba(13, 18, 22, 0.95);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
 }
 
 .iks-workplan-ring__inner span {
@@ -377,6 +434,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--iks-workplan-space-xs);
+    min-width: 0;
 }
 
 .iks-workplan__kv {
@@ -386,8 +444,8 @@
     gap: 10px;
     padding: 9px 10px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.026);
-    border: 1px solid rgba(255, 255, 255, 0.045);
+    background: rgba(15, 23, 42, 0.026);
+    border: 1px solid rgba(15, 23, 42, 0.045);
     font-size: 0.68rem;
     color: var(--iks-workplan-muted);
 }
@@ -401,20 +459,36 @@
 }
 
 .iks-workplan__bucket-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: var(--iks-workplan-space-xs);
+}
+
+@media (min-width: 480px) {
+    .iks-workplan__bucket-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--iks-workplan-space-sm);
+    }
 }
 
 .iks-workplan__bucket {
     border-radius: 12px;
-    padding: 10px 11px;
+    padding: 10px 12px;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    background: rgba(15, 23, 42, 0.03);
+    border: 1px solid rgba(15, 23, 42, 0.04);
+    min-width: 0;
+}
+
+.iks-workplan__bucket-copy,
+.iks-workplan__later-copy {
+    min-width: 0;
+    width: 100%;
+    overflow: hidden;
 }
 
 .iks-workplan__bucket span,
@@ -440,6 +514,8 @@
     line-height: 1.05;
     letter-spacing: var(--iks-workplan-number-letter);
     color: var(--iks-workplan-text);
+    display: block;
+    margin-top: 2px;
 }
 
 .iks-workplan__bucket--warning {
@@ -451,7 +527,7 @@
 }
 
 .iks-workplan__later-volume-label {
-    margin-top: 14px;
+    margin-top: 2px;
     font-size: 0.6rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -459,21 +535,21 @@
 }
 
 .iks-workplan__later-volume {
-    margin-top: 6px;
+    margin-top: 0;
     font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
-    font-size: var(--iks-workplan-number-major-size);
-    line-height: 0.98;
+    font-size: clamp(2.45rem, 3.2vw, 3.55rem);
+    line-height: 0.96;
     font-weight: var(--iks-workplan-number-weight);
     letter-spacing: var(--iks-workplan-number-letter);
     color: var(--iks-workplan-text);
 }
 
 .iks-workplan__later-ittt {
-    margin-top: var(--iks-workplan-space-sm);
-    padding: 12px 13px;
-    border-radius: 14px;
-    background: linear-gradient(180deg, rgba(104, 238, 255, 0.08), rgba(104, 238, 255, 0.02));
-    border: 1px solid rgba(104, 238, 255, 0.12);
+    margin-top: 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(18, 35, 45, 0.82), rgba(11, 22, 28, 0.92));
+    border: 1px solid rgba(104, 238, 255, 0.18);
 }
 
 .iks-workplan__later-ittt span {
@@ -523,15 +599,16 @@
 }
 
 .iks-workplan__later-list {
-    margin-top: 14px;
+    margin-top: auto;
     display: flex;
     flex-direction: column;
     gap: var(--iks-workplan-space-xs);
+    padding-top: 6px;
 }
 
 .iks-workplan__later-item {
     padding: 14px 0 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(15, 23, 42, 0.06);
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
@@ -548,8 +625,8 @@
     flex-direction: column;
     align-items: flex-end;
     justify-content: center;
-    gap: 6px;
-    min-width: 108px;
+    gap: 4px;
+    min-width: 120px;
 }
 
 .iks-workplan__later-item strong.muted {
@@ -563,8 +640,8 @@
     min-width: 52px;
     padding: 2px 6px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(15, 23, 42, 0.03);
     font-size: 0.5rem;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -594,8 +671,8 @@
     gap: 8px;
     padding: 6px 10px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(15, 23, 42, 0.03);
     color: var(--iks-workplan-muted);
     font-size: 0.68rem;
     font-weight: 600;
@@ -622,8 +699,8 @@
     margin-top: 14px;
     padding: 14px;
     border-radius: 14px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.036), rgba(255, 255, 255, 0.016));
-    border: 1px solid rgba(255, 255, 255, 0.055);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.036), rgba(15, 23, 42, 0.016));
+    border: 1px solid rgba(15, 23, 42, 0.055);
     font-size: 0.76rem;
     line-height: 1.5;
     color: rgba(243, 247, 251, 0.86);
@@ -635,6 +712,17 @@
 
 .iks-workplan__denial-headline {
     border-color: rgba(245, 185, 84, 0.12);
+}
+
+.iks-workplan__denial-note {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(15, 23, 42, 0.18);
+    color: var(--iks-workplan-muted);
+    font-size: 0.72rem;
+    line-height: 1.45;
 }
 
 .iks-workplan__signal-strip {
@@ -651,8 +739,8 @@
 .iks-workplan__signal-card {
     padding: 14px;
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.055);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.012));
+    border: 1px solid rgba(15, 23, 42, 0.055);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.028), rgba(15, 23, 42, 0.012));
 }
 
 .iks-workplan__signal-card span {
@@ -705,8 +793,8 @@
     position: relative;
     padding: 14px 14px 14px 16px;
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.055);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.012));
+    border: 1px solid rgba(15, 23, 42, 0.055);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.028), rgba(15, 23, 42, 0.012));
 }
 
 .iks-workplan__freshness-row::before,
@@ -790,7 +878,7 @@
     width: 100%;
     height: 18px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(15, 23, 42, 0.04);
     display: flex;
     align-items: center;
 }
@@ -815,7 +903,7 @@
     right: 8px;
     font-size: 0.64rem;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(15, 23, 42, 0.9);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     pointer-events: none;
 }
@@ -839,8 +927,8 @@
     min-height: 38px;
     padding: 0 10px;
     border-radius: 12px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.026));
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.085), rgba(15, 23, 42, 0.026));
+    border: 1px solid rgba(15, 23, 42, 0.08);
     font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
     font-size: 0.8rem;
     font-weight: 700;
@@ -912,8 +1000,8 @@
     min-height: 72px;
     padding: 14px;
     border-radius: 12px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.032), rgba(255, 255, 255, 0.016));
-    border: 1px solid rgba(255, 255, 255, 0.055);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.032), rgba(15, 23, 42, 0.016));
+    border: 1px solid rgba(15, 23, 42, 0.055);
     font-size: 0.72rem;
     color: var(--iks-workplan-subtle);
     line-height: 1.55;
@@ -946,8 +1034,8 @@
     flex: 1;
     padding: 12px 14px;
     border-radius: 10px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015));
-    border: 1px solid rgba(255, 255, 255, 0.055);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.03), rgba(15, 23, 42, 0.015));
+    border: 1px solid rgba(15, 23, 42, 0.055);
 }
 
 .iks-workplan__protocol-item p {
@@ -969,14 +1057,17 @@
     justify-content: center;
     border-radius: 8px;
     color: var(--iks-workplan-muted);
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(15, 23, 42, 0.03);
+    border: 1px solid rgba(15, 23, 42, 0.05);
 }
 
 .iks-workplan-table {
     margin-top: 14px;
     overflow-x: auto;
+    overflow-y: visible;
     padding-bottom: 6px;
+    width: 100%;
+    scrollbar-width: thin;
 }
 
 .iks-workplan__table-source {
@@ -1008,8 +1099,8 @@
 .iks-workplan__npnr-summary-card {
     padding: 14px;
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.055);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.012));
+    border: 1px solid rgba(15, 23, 42, 0.055);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.028), rgba(15, 23, 42, 0.012));
 }
 
 .iks-workplan__npnr-summary-card span {
@@ -1040,8 +1131,8 @@
 .iks-workplan__entity-chip {
     padding: 12px 13px;
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    border: 1px solid rgba(15, 23, 42, 0.05);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.03), rgba(15, 23, 42, 0.01));
 }
 
 .iks-workplan__entity-chip span {
@@ -1069,10 +1160,44 @@
     color: rgba(243, 247, 251, 0.68);
 }
 
+.iks-workplan__entity-chip--patient-resp {
+    border-color: rgba(15, 23, 42, 0.04);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.015), rgba(15, 23, 42, 0.005));
+    opacity: 0.75;
+    position: relative;
+}
+
+.iks-workplan__entity-chip--patient-resp::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    width: 3px;
+    height: calc(100% - 16px);
+    border-radius: 999px;
+    background: rgba(160, 170, 185, 0.5);
+}
+
+.iks-workplan__entity-chip--patient-resp span {
+    color: rgba(160, 170, 185, 0.7);
+    padding-left: 8px;
+}
+
+.iks-workplan__entity-chip--patient-resp strong {
+    color: rgba(160, 170, 185, 0.85);
+    padding-left: 8px;
+}
+
+.iks-workplan__entity-chip--patient-resp small {
+    color: rgba(160, 170, 185, 0.55);
+    font-style: italic;
+    padding-left: 8px;
+}
+
 .iks-workplan__npnr-controls {
     margin-top: 14px;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 172px;
+    grid-template-columns: minmax(0, 1fr) 172px 172px;
     gap: 10px;
 }
 
@@ -1081,7 +1206,7 @@
     width: 100%;
     min-height: 42px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(15, 23, 42, 0.08);
     background: rgba(10, 18, 22, 0.72);
     color: var(--iks-workplan-text);
     font: inherit;
@@ -1111,7 +1236,7 @@
 
 .iks-workplan-table__header {
     padding-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .iks-workplan-table__header span {
@@ -1135,9 +1260,11 @@
 
 .iks-workplan-table__header--detail,
 .iks-workplan-table__row--detail {
-    min-width: 960px;
-    grid-template-columns: minmax(280px, 2.5fr) minmax(180px, 1.5fr) 140px 120px 90px 120px;
-    gap: 16px;
+    width: max(100%, 1220px);
+    min-width: 1220px;
+    box-sizing: border-box;
+    grid-template-columns: var(--iks-workplan-detail-grid);
+    gap: 14px;
 }
 
 .iks-workplan-table__header--detail span:nth-child(1),
@@ -1176,12 +1303,12 @@
     position: relative;
     padding: 14px 14px 14px 16px;
     margin-top: 0;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(15, 23, 42, 0.05);
     background:
-        linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.014)),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+        linear-gradient(90deg, rgba(15, 23, 42, 0.03), rgba(15, 23, 42, 0.014)),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.012), rgba(15, 23, 42, 0));
+    box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
 }
 
 .iks-workplan-table__row:last-child {
@@ -1210,7 +1337,7 @@
     inset: 10px auto 10px 0;
     width: 4px;
     border-radius: 999px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--iks-workplan-payer-accent), rgba(255, 255, 255, 0));
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0), var(--iks-workplan-payer-accent), rgba(15, 23, 42, 0));
     opacity: 0.95;
 }
 
@@ -1254,20 +1381,40 @@
 }
 
 .iks-workplan-table__detail-cell--numeric {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
     text-align: right;
-    justify-self: end;
+    justify-self: stretch;
     font-variant-numeric: tabular-nums;
+    min-width: 0;
+}
+
+.iks-workplan-table__detail-cell--timing {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
 }
 
 .iks-workplan-table__detail-cell--amount {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
     font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
     font-size: var(--iks-workplan-number-compact-size);
     font-weight: var(--iks-workplan-number-weight);
     letter-spacing: var(--iks-workplan-number-letter);
     color: var(--iks-workplan-text);
-    overflow: visible;
+    overflow: hidden;
     white-space: nowrap;
-    padding-right: 4px;
+    padding-right: 0;
+    min-width: 0;
+}
+
+.iks-workplan__timing-meta {
+    font-size: 0.62rem;
+    line-height: 1.2;
+    color: var(--iks-workplan-muted);
 }
 
 .iks-workplan__date-enc-count {
@@ -1331,8 +1478,8 @@
     min-height: 34px;
     padding: 0 12px;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(15, 23, 42, 0.03);
     color: var(--iks-workplan-text);
     font: inherit;
     font-size: 0.72rem;
@@ -1365,22 +1512,27 @@
     min-width: 38px;
     height: 38px;
     border-radius: 12px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.03));
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.085), rgba(15, 23, 42, 0.03));
+    border: 1px solid rgba(15, 23, 42, 0.08);
     font-size: 0.7rem;
     font-weight: 700;
     color: var(--iks-workplan-text);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.05);
 }
 
 .iks-workplan-table__payer-copy {
     min-width: 0;
+    overflow: hidden;
 }
 
 .iks-workplan-table__payer {
-    font-size: 0.78rem;
+    font-size: 0.86rem;
     font-weight: 650;
     color: var(--iks-workplan-text);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .iks-workplan-table__state {
@@ -1389,6 +1541,10 @@
     letter-spacing: 0.09em;
     text-transform: uppercase;
     color: var(--iks-workplan-muted);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .iks-workplan-table__pass {
@@ -1408,7 +1564,7 @@
     height: 6px;
     border-radius: 999px;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(15, 23, 42, 0.06);
 }
 
 .iks-workplan-table__bar span {
@@ -1478,7 +1634,30 @@
 }
 
 @media (max-width: 860px) {
-    .iks-workplan {
+
+[data-theme="light"] .iks-workplan {
+    --iks-workplan-bg: #f8fafc;
+    --iks-workplan-bg-gradient: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 36%, #ffffff 100%);
+    --iks-workplan-card: #ffffff;
+    --iks-workplan-card-soft: #f8fafc;
+    --iks-workplan-border: rgba(15, 23, 42, 0.08);
+    --iks-workplan-border-strong: rgba(15, 23, 42, 0.22);
+    --iks-workplan-text: #0f172a;
+    --iks-workplan-muted: #64748b;
+    --iks-workplan-subtle: #94a3b8;
+    --iks-workplan-cyan: #0284c7;
+    --iks-workplan-cyan-soft: rgba(2, 132, 199, 0.08);
+    --iks-workplan-green: #059669;
+    --iks-workplan-amber: #d97706;
+    --iks-workplan-red: #e11d48;
+    --iks-workplan-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+    --iks-workplan-glass: rgba(15, 23, 42, 0.85);
+}
+
+.iks-workplan {
+    --iks-workplan-bg-gradient: var(--iks-workplan-bg-gradient);
+    --iks-workplan-glass: rgba(15, 21, 25, 0.85);
+
         padding: 14px;
         border-radius: 22px;
     }
@@ -1549,7 +1728,7 @@
 
     .iks-workplan-table__header--detail,
     .iks-workplan-table__row--detail {
-        min-width: 1040px;
+        min-width: 1220px;
     }
 }
 
@@ -1606,12 +1785,13 @@
 
 .iks-workplan-nested-header {
     display: grid;
-    grid-template-columns: minmax(280px, 2.5fr) minmax(180px, 1.5fr) 140px 120px 90px 120px;
-    gap: 16px;
+    box-sizing: border-box;
+    grid-template-columns: var(--iks-workplan-detail-grid);
+    gap: 14px;
     font-size: 11px;
     text-transform: uppercase;
     color: var(--iks-workplan-text-muted, #7c93a8);
-    border-bottom: 1px solid var(--iks-workplan-border, rgba(255, 255, 255, 0.05));
+    border-bottom: 1px solid var(--iks-workplan-border, rgba(15, 23, 42, 0.05));
     padding: 8px 14px 6px;
     margin-bottom: 4px;
     font-family: var(--font-mono, monospace);
@@ -1621,12 +1801,13 @@
 
 .iks-workplan-nested-row {
     display: grid;
-    grid-template-columns: minmax(280px, 2.5fr) minmax(180px, 1.5fr) 140px 120px 90px 120px;
-    gap: 16px;
+    box-sizing: border-box;
+    grid-template-columns: var(--iks-workplan-detail-grid);
+    gap: 14px;
     font-size: 13px;
     padding: 6px 14px;
     color: var(--iks-workplan-text, #ffffff);
-    border-bottom: 1px dashed var(--iks-workplan-border, rgba(255, 255, 255, 0.05));
+    border-bottom: 1px dashed var(--iks-workplan-border, rgba(15, 23, 42, 0.05));
     align-items: center;
 }
 
@@ -1635,7 +1816,7 @@
 }
 
 .iks-workplan-nested-row:hover {
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: rgba(15, 23, 42, 0.03);
     border-radius: 8px;
 }
 
@@ -1648,7 +1829,1397 @@
 }
 
 .nested-numeric {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
     font-family: var(--font-mono, monospace);
-    justify-self: end;
+    justify-self: stretch;
     text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.nested-cell--timing {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.nested-cell--amount {
+    justify-content: flex-end;
+    text-align: right;
+    font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
+    font-weight: 700;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* Cadence Grid Styles */
+.iks-workplan__cadence-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 14px;
+    padding: 12px;
+    background: rgba(15, 23, 42, 0.02);
+    border-radius: 20px;
+    border: 1px solid rgba(15, 23, 42, 0.04);
+}
+
+.iks-workplan__cadence-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.03);
+    transition: transform 0.2s ease, background 0.2s ease;
+    min-width: 0;
+}
+
+.iks-workplan__cadence-card:hover {
+    background: rgba(15, 23, 42, 0.05);
+    transform: translateY(-2px);
+}
+
+.iks-workplan__cadence-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--iks-workplan-muted);
+}
+
+.iks-workplan__cadence-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.iks-workplan__cadence-value {
+    font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--iks-workplan-text);
+}
+
+.iks-workplan__cadence-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 999px;
+}
+
+.iks-workplan__cadence-trend.is-up {
+    color: #28d38a;
+    background: rgba(40, 211, 138, 0.1);
+}
+
+.iks-workplan__cadence-trend.is-down {
+    color: #ff8d92;
+    background: rgba(255, 141, 146, 0.1);
+}
+
+.iks-workplan__cadence-detail {
+    font-size: 0.6rem;
+    color: var(--iks-workplan-subtle);
+}
+
+/* Softening existing cards */
+.iks-workplan-card {
+    backdrop-filter: blur(12px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(15, 23, 42, 0.06) !important;
+}
+
+.iks-workplan__hero {
+    box-shadow: inset 0 0 40px rgba(104, 238, 255, 0.03);
+}
+
+.iks-workplan__inventory-metric {
+    background: rgba(15, 23, 42, 0.035) !important;
+    border-color: rgba(15, 23, 42, 0.06) !important;
+}
+
+.iks-workplan__inventory-value span {
+    text-shadow: 0 0 20px rgba(104, 238, 255, 0.2);
+}
+
+/* Trend Row Styles */
+.iks-workplan__main-trend-row {
+    margin: var(--iks-workplan-space-md) 0;
+}
+
+.iks-workplan__main-trend-card {
+    padding: var(--iks-workplan-card-pad);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.01), transparent) var(--iks-workplan-card-soft);
+}
+
+.iks-workplan__trend-title-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.iks-workplan__trend-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--iks-workplan-cyan-soft);
+    color: var(--iks-workplan-cyan);
+    box-shadow: 0 4px 12px rgba(104, 238, 255, 0.1);
+}
+
+.iks-workplan__trend-title-box h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--iks-workplan-text);
+}
+
+.iks-workplan__trend-title-box p {
+    margin: 2px 0 0;
+    font-size: 0.7rem;
+    color: var(--iks-workplan-muted);
+}
+
+.iks-workplan__granularity-switcher {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+.iks-workplan__granularity-switcher button {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--iks-workplan-muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.iks-workplan__granularity-switcher button:hover {
+    color: var(--iks-workplan-text);
+    background: rgba(15, 23, 42, 0.05);
+}
+
+.iks-workplan__granularity-switcher button.active {
+    background: var(--iks-workplan-cyan);
+    color: #000;
+    box-shadow: 0 4px 12px rgba(104, 238, 255, 0.25);
+}
+
+.iks-workplan__trend-chart-box {
+    margin-top: var(--iks-workplan-space-lg);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.15);
+    padding: 14px 14px 12px;
+    border: 1px solid rgba(15, 23, 42, 0.03);
+    position: relative;
+    overflow: hidden;
+}
+
+.iks-workplan__trend-overlay {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.iks-workplan__trend-overlay-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.iks-workplan__trend-overlay-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--iks-workplan-muted);
+}
+
+.iks-workplan__trend-overlay-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.iks-workplan__trend-overlay-card {
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid rgba(103, 232, 249, 0.12);
+    border-radius: 8px;
+    background:
+        linear-gradient(180deg, rgba(15, 23, 42, 0.48), rgba(15, 23, 42, 0.22)),
+        rgba(2, 6, 23, 0.18);
+    backdrop-filter: blur(6px);
+}
+
+.iks-workplan__trend-overlay-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--iks-workplan-muted);
+}
+
+.iks-workplan__trend-overlay-value {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 1.1rem;
+    line-height: 1.05;
+    color: var(--iks-workplan-text);
+}
+
+.iks-workplan__trend-overlay-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.iks-workplan__trend-overlay-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.iks-workplan__trend-overlay-trend.is-up {
+    color: #22e6a6;
+}
+
+.iks-workplan__trend-overlay-trend.is-down {
+    color: #ff8a8a;
+}
+
+.iks-workplan__trend-overlay-trend.is-flat {
+    color: var(--iks-workplan-muted);
+}
+
+.iks-workplan__trend-overlay-detail {
+    font-size: 0.72rem;
+    color: var(--iks-workplan-muted);
+    white-space: nowrap;
+}
+
+@media (max-width: 1120px) {
+    .iks-workplan__trend-overlay-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .iks-workplan__trend-overlay-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .iks-workplan__trend-overlay-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .iks-workplan__trend-overlay-detail {
+        white-space: normal;
+    }
+}
+
+/* Recharts Customization */
+.recharts-cartesian-grid-horizontal line {
+    stroke-opacity: 0.4;
+}
+
+.recharts-tooltip-cursor {
+    stroke: var(--iks-workplan-cyan);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+}
+
+/* ─── Volume Lines (Bifurcation tags below 660K) ─── */
+.iks-workplan__volume-lines {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    min-width: 0;
+}
+
+.iks-workplan__volume-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--iks-workplan-border);
+    background: var(--iks-workplan-cyan-soft);
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--iks-workplan-text);
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.3;
+}
+
+.iks-workplan__volume-tag-label {
+    color: var(--iks-workplan-muted);
+    font-weight: 500;
+}
+
+/* ─── Light Theme Comprehensive Overrides ─── */
+[data-theme="light"] .iks-workplan {
+    border-color: rgba(15, 23, 42, 0.08);
+    background:
+        linear-gradient(180deg, #f1f5f9 0%, #f8fafc 36%, #ffffff 100%);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="light"] .iks-workplan::before {
+    background: radial-gradient(circle, rgba(2, 132, 199, 0.06), transparent 70%);
+}
+
+[data-theme="light"] .iks-workplan::after {
+    background-image: none;
+}
+
+[data-theme="light"] .iks-workplan-card {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.08);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="light"] .iks-workplan-card::before {
+    background: linear-gradient(90deg, transparent, rgba(2, 132, 199, 0.12), transparent);
+}
+
+[data-theme="light"] .iks-workplan-card--expanded {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.1);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .iks-workplan__inventory-value span {
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__inventory-metric {
+    border-color: rgba(15, 23, 42, 0.06);
+    background: #f8fafc;
+}
+
+[data-theme="light"] .iks-workplan__inventory-metric span {
+    color: #64748b;
+}
+
+[data-theme="light"] .iks-workplan__inventory-metric strong {
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__inventory-metric--info strong,
+[data-theme="light"] .iks-workplan__inventory-metric--info .iks-workplan__delta {
+    color: #0284c7;
+}
+
+[data-theme="light"] .iks-workplan__inventory-metric--warning strong,
+[data-theme="light"] .iks-workplan__inventory-metric--warning .iks-workplan__delta {
+    color: #d97706;
+}
+
+[data-theme="light"] .iks-workplan__inventory-metric--accent strong,
+[data-theme="light"] .iks-workplan__inventory-metric--accent .iks-workplan__delta {
+    color: #059669;
+}
+
+[data-theme="light"] .iks-workplan__cadence-card {
+    border-color: rgba(15, 23, 42, 0.06);
+    background: #f8fafc;
+}
+
+[data-theme="light"] .iks-workplan__cadence-label {
+    color: #64748b;
+}
+
+[data-theme="light"] .iks-workplan__cadence-value {
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__cadence-detail {
+    color: #94a3b8;
+}
+
+[data-theme="light"] .iks-workplan__heading {
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__heading-ts {
+    color: #64748b;
+}
+
+[data-theme="light"] .iks-workplan-card__badge {
+    background: rgba(2, 132, 199, 0.08);
+    color: #0284c7;
+    border-color: rgba(2, 132, 199, 0.16);
+}
+
+[data-theme="light"] .iks-workplan__today-card,
+[data-theme="light"] .iks-workplan__later-card {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.08);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="light"] .iks-workplan__today-card h3,
+[data-theme="light"] .iks-workplan__later-card h3 {
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__today-card p,
+[data-theme="light"] .iks-workplan__later-card p {
+    color: #64748b;
+}
+
+[data-theme="light"] .iks-workplan__stat-label {
+    color: #64748b;
+}
+
+[data-theme="light"] .iks-workplan__stat-value {
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__bucket {
+    border-color: rgba(15, 23, 42, 0.06);
+    background: #f8fafc;
+}
+
+[data-theme="light"] .iks-workplan__bucket-label {
+    color: #64748b;
+}
+
+[data-theme="light"] .iks-workplan__bucket-meta {
+    color: #94a3b8;
+}
+
+[data-theme="light"] .iks-workplan__bucket-value {
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__later-volume strong {
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__ittt-row {
+    border-color: rgba(15, 23, 42, 0.06);
+    background: #f8fafc;
+}
+
+[data-theme="light"] .iks-workplan__later-item {
+    border-color: rgba(15, 23, 42, 0.06);
+    background: #f8fafc;
+}
+
+[data-theme="light"] .iks-workplan__later-item-label {
+    color: #334155;
+}
+
+[data-theme="light"] .iks-workplan__later-item-detail {
+    color: #94a3b8;
+}
+
+[data-theme="light"] .iks-workplan__later-item-value {
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__later-item-flag {
+    background: rgba(15, 23, 42, 0.04);
+    color: #64748b;
+    border-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .iks-workplan__eyebrow span {
+    color: #64748b;
+}
+
+[data-theme="light"] .iks-workplan__hero-band {
+    background: linear-gradient(90deg, transparent, rgba(2, 132, 199, 0.08), transparent);
+}
+
+[data-theme="light"] .iks-workplan__arrow {
+    color: #94a3b8;
+}
+
+[data-theme="light"] .iks-workplan__volume-tag {
+    background: rgba(2, 132, 199, 0.06);
+    border-color: rgba(15, 23, 42, 0.08);
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__volume-tag-label {
+    color: #64748b;
+}
+
+[data-theme="light"] .iks-workplan__granularity-switcher button {
+    color: #64748b;
+}
+
+[data-theme="light"] .iks-workplan__granularity-switcher button:hover {
+    color: #0f172a;
+    background: rgba(15, 23, 42, 0.04);
+}
+
+[data-theme="light"] .iks-workplan__granularity-switcher button.active {
+    background: #0284c7;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+}
+
+[data-theme="light"] .iks-workplan__trend-chart-box {
+    background: rgba(15, 23, 42, 0.02);
+    border-color: rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="light"] .iks-workplan__metric-detail {
+    color: #94a3b8;
+}
+
+[data-theme="light"] .iks-workplan__error {
+    border-color: rgba(225, 29, 72, 0.2);
+    background: rgba(225, 29, 72, 0.04);
+    color: #e11d48;
+}
+
+[data-theme="light"] .iks-workplan__loading {
+    border-color: rgba(2, 132, 199, 0.14);
+    background: rgba(2, 132, 199, 0.04);
+    color: #334155;
+}
+
+/* ─── Light Theme: Progress Ring ─── */
+[data-theme="light"] .iks-workplan-ring {
+    background:
+        radial-gradient(circle at center, #ffffff 58%, transparent 59%),
+        conic-gradient(var(--iks-workplan-cyan) var(--iks-workplan-progress), rgba(15, 23, 42, 0.08) 0);
+}
+
+[data-theme="light"] .iks-workplan-ring__inner {
+    background: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+/* ─── Light Theme: Search + Select inputs ─── */
+[data-theme="light"] .iks-workplan__npnr-search,
+[data-theme="light"] .iks-workplan__npnr-select {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.12);
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__npnr-search:focus,
+[data-theme="light"] .iks-workplan__npnr-select:focus {
+    border-color: rgba(2, 132, 199, 0.28);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.08);
+}
+
+/* ─── Light Theme: Table rows ─── */
+[data-theme="light"] .iks-workplan-table__detail-cell {
+    color: #334155;
+}
+
+[data-theme="light"] .iks-workplan-table__row {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.06);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+[data-theme="light"] .iks-workplan-table__row:hover {
+    border-color: rgba(2, 132, 199, 0.18);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .iks-workplan-table__row::before {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0), var(--iks-workplan-payer-accent), rgba(15, 23, 42, 0));
+}
+
+[data-theme="light"] .iks-workplan-table__row::after {
+    background: radial-gradient(circle at left center, color-mix(in srgb, var(--iks-workplan-payer-accent) 6%, transparent), transparent 52%);
+}
+
+[data-theme="light"] .iks-workplan-table__header {
+    background: #f8fafc;
+    border-color: rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="light"] .iks-workplan-table__header-cell {
+    color: #64748b;
+}
+
+[data-theme="light"] .iks-workplan-table__payer {
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan-table__state {
+    color: #64748b;
+}
+
+[data-theme="light"] .iks-workplan-table__detail-cell--amount {
+    color: #0f172a;
+}
+
+/* ─── Light Theme: Freshness & Denial sections ─── */
+[data-theme="light"] .iks-workplan__freshness-row {
+    background: #f8fafc;
+    border-color: rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="light"] .iks-workplan__freshness-track {
+    background: rgba(15, 23, 42, 0.04);
+}
+
+[data-theme="light"] .iks-workplan__denial-row {
+    background: #f8fafc;
+    border-color: rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="light"] .iks-workplan__denial-code {
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__denial-copy span {
+    color: #334155;
+}
+
+[data-theme="light"] .iks-workplan__denial-copy small {
+    color: #64748b;
+}
+
+[data-theme="light"] .iks-workplan__denial-values strong {
+    color: #0f172a;
+}
+
+/* ─── Light Theme: NPNR bottom section ─── */
+[data-theme="light"] .iks-workplan__npnr-summary-card {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.06);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+[data-theme="light"] .iks-workplan__npnr-summary-value {
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__npnr-summary-label {
+    color: #64748b;
+}
+
+/* ─── Light Theme: Heading timestamp badge ─── */
+[data-theme="light"] .iks-workplan__heading-ts {
+    color: #0284c7;
+    background: rgba(2, 132, 199, 0.06);
+    border-color: rgba(2, 132, 199, 0.14);
+}
+
+/* ─── Light Theme: Signal cards ─── */
+[data-theme="light"] .iks-workplan__signal-card {
+    background: #f8fafc;
+    border-color: rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="light"] .iks-workplan__signal-card strong {
+    color: #0f172a;
+}
+
+/* ─── Light Theme: Protocol section ─── */
+[data-theme="light"] .iks-workplan__protocol-tag {
+    background: rgba(2, 132, 199, 0.08);
+    color: #0284c7;
+}
+
+[data-theme="light"] .iks-workplan__protocol-text {
+    color: #334155;
+}
+
+/* ─── Light Theme: Expanded row backgrounds ─── */
+[data-theme="light"] .iks-workplan-table__row--detail.iks-row-expanded {
+    background: #f8fafc;
+}
+
+[data-theme="light"] .iks-workplan-table__row--sub {
+    background: #f1f5f9;
+}
+
+:root[data-theme='light'] .iks-workplan,
+[data-theme="light"] .iks-workplan {
+    background:
+        radial-gradient(circle at top right, rgba(2, 132, 199, 0.05), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(5, 150, 105, 0.05), transparent 30%),
+        var(--iks-workplan-bg-gradient) !important;
+    border-color: rgba(15, 23, 42, 0.08) !important;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06) !important;
+}
+
+:root[data-theme='light'] .iks-workplan__hero,
+[data-theme="light"] .iks-workplan__hero {
+    background:
+        linear-gradient(135deg, rgba(2, 132, 199, 0.04), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96)) !important;
+    border-color: rgba(15, 23, 42, 0.08) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+:root[data-theme='light'] .iks-workplan__today-card,
+:root[data-theme='light'] .iks-workplan__later-card,
+[data-theme="light"] .iks-workplan__today-card,
+[data-theme="light"] .iks-workplan__later-card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.97)) !important;
+}
+
+/* Top KPI redesign */
+.iks-workplan__top {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.82fr) 18px minmax(760px, 2.04fr);
+    gap: 12px;
+    align-items: stretch;
+}
+
+.iks-workplan__inventory-card {
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.iks-workplan__inventory-value-box--redesign {
+    height: 100%;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.iks-workplan__inventory-value-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.iks-workplan__inventory-meta {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    color: var(--iks-workplan-muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.iks-workplan__inventory-meta strong {
+    font-size: 0.78rem;
+    color: var(--iks-workplan-text);
+    letter-spacing: 0.02em;
+}
+
+.iks-workplan__inventory-summary-list {
+    display: grid;
+    gap: 12px;
+    padding-top: 4px;
+    align-content: start;
+    width: 100%;
+}
+
+.iks-workplan__inventory-content-grid {
+    display: block;
+}
+
+
+.iks-workplan__inventory-breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-self: stretch;
+}
+
+.iks-workplan__inventory-breakdown-grid .iks-workplan__breakdown-block {
+    height: 100%;
+}
+
+.iks-workplan__summary-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+    min-width: 0;
+    padding: 0;
+    border-radius: 8px;
+    border: 0;
+    background: transparent;
+    overflow: hidden;
+}
+
+.iks-workplan__summary-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--iks-workplan-muted);
+}
+
+.iks-workplan__summary-value {
+    font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
+    font-size: 1.14rem;
+    font-weight: 760;
+    line-height: 1.15;
+    letter-spacing: 0;
+    color: var(--iks-workplan-text);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.iks-workplan__summary-balance {
+    font-size: 0.78rem;
+    font-weight: 650;
+    color: var(--iks-workplan-muted);
+}
+
+.iks-workplan__summary-row--info .iks-workplan__summary-value {
+    color: var(--iks-workplan-cyan);
+}
+
+.iks-workplan__summary-row--warning .iks-workplan__summary-value {
+    color: var(--iks-workplan-amber);
+}
+
+.iks-workplan__summary-detail {
+    font-size: 0.72rem;
+    color: var(--iks-workplan-muted);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.iks-workplan__cadence-shell {
+    margin-top: 16px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.iks-workplan__cadence-title {
+    margin-bottom: 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--iks-workplan-muted);
+}
+
+.iks-workplan__cadence-grid {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.iks-workplan__cadence-card {
+    padding: 8px 4px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.iks-workplan__cadence-card:hover {
+    background: transparent;
+    transform: none;
+}
+
+.iks-workplan__cadence-value {
+    font-size: 0.96rem;
+    line-height: 1.1;
+}
+
+.iks-workplan__cadence-label {
+    font-size: 0.6rem;
+}
+
+.iks-workplan__cadence-detail {
+    font-size: 0.56rem;
+}
+
+.iks-workplan__plan-group {
+    gap: 8px;
+}
+
+.iks-workplan__plan-grid {
+    grid-template-columns: minmax(0, 1.28fr) minmax(310px, 0.86fr);
+    grid-template-areas:
+        "today later"
+        "worked later";
+    gap: 10px;
+    align-items: stretch;
+    grid-auto-rows: minmax(0, auto);
+}
+
+.iks-workplan__today-card {
+    grid-area: today;
+    padding: 18px 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.iks-workplan__worked-card {
+    grid-area: worked;
+    padding: 16px 18px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.iks-workplan__later-card {
+    grid-area: later;
+    padding: 18px 18px 16px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.iks-workplan__today-body {
+    margin-top: 14px;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 20px;
+    align-items: center;
+}
+
+.iks-workplan__today-stats {
+    gap: 12px;
+}
+
+.iks-workplan__today-kpis {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.iks-workplan__kv {
+    padding: 0 14px 0 0;
+    border-radius: 0;
+    border: 0;
+    background: transparent;
+    min-height: 56px;
+    align-items: flex-start;
+    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.iks-workplan__kv + .iks-workplan__kv {
+    padding: 0 0 0 18px;
+    border-left: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.iks-workplan__bucket-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.iks-workplan__bucket {
+    min-height: 72px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 4px;
+    border-radius: 10px;
+}
+
+.iks-workplan__later-list {
+    gap: 0;
+    margin-top: 8px;
+}
+
+.iks-workplan__later-item {
+    padding: 14px 0;
+    min-height: 84px;
+}
+
+.iks-workplan__about-card {
+    margin-top: 4px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px dashed rgba(61, 211, 224, 0.32);
+    background: rgba(7, 15, 22, 0.55);
+}
+
+.iks-workplan__about-card--compact {
+    margin-top: auto;
+}
+
+.iks-workplan__about-title,
+.iks-workplan__section-title {
+    font-size: 0.86rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--iks-workplan-cyan);
+}
+
+.iks-workplan__about-card p {
+    margin: 10px 0 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: rgba(243, 247, 251, 0.72);
+}
+
+.iks-workplan__breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.iks-workplan__breakdown-block {
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 8px;
+    padding: 14px;
+    background: rgba(15, 23, 42, 0.24);
+    min-width: 0;
+    overflow: hidden;
+}
+
+.iks-workplan__breakdown-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--iks-workplan-text);
+}
+
+.iks-workplan__breakdown-content {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    min-width: 0;
+}
+
+.iks-workplan__donut {
+    width: 88px;
+    height: 88px;
+    min-width: 88px;
+    border-radius: 50%;
+    background: var(--iks-workplan-donut-gradient);
+    position: relative;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.12);
+    flex: 0 0 auto;
+}
+
+.iks-workplan__donut-center {
+    position: absolute;
+    inset: 15px;
+    border-radius: 50%;
+    background: var(--iks-workplan-card);
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.12);
+}
+
+.iks-workplan__legend {
+    display: grid;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+}
+
+.iks-workplan__legend-row {
+    display: grid;
+    grid-template-columns: 10px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+}
+
+.iks-workplan__legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+}
+
+.iks-workplan__legend-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.iks-workplan__legend-copy span {
+    font-size: 0.74rem;
+    line-height: 1.3;
+    color: var(--iks-workplan-text);
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.iks-workplan__legend-values {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.iks-workplan__legend-values strong {
+    font-size: 0.88rem;
+    line-height: 1.2;
+    color: rgba(243, 247, 251, 0.94);
+    min-width: 0;
+}
+
+.iks-workplan__legend-values small {
+    font-size: 0.68rem;
+    color: var(--iks-workplan-muted);
+    font-weight: 500;
+    min-width: 0;
+}
+
+.iks-workplan__worked-grid {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.iks-workplan__worked-pill {
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(15, 23, 42, 0.18);
+    display: grid;
+    gap: 6px;
+    justify-items: center;
+    text-align: center;
+    min-width: 0;
+}
+
+.iks-workplan__worked-pill span,
+.iks-workplan__worked-breakdown-card span {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--iks-workplan-text);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.iks-workplan__worked-pill strong,
+.iks-workplan__worked-breakdown-card strong {
+    font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
+    font-size: 1.08rem;
+    font-weight: 760;
+    letter-spacing: 0;
+    color: rgba(243, 247, 251, 0.98);
+    line-height: 1.15;
+}
+
+.iks-workplan__worked-pill small,
+.iks-workplan__worked-breakdown-card small,
+.iks-workplan__worked-footnote {
+    font-size: 0.78rem;
+    color: var(--iks-workplan-muted);
+}
+
+.iks-workplan__worked-breakdown {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.iks-workplan__worked-breakdown-card {
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(61, 211, 224, 0.18);
+    background: rgba(9, 17, 23, 0.72);
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.iks-workplan__worked-footnote {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px dashed rgba(61, 211, 224, 0.18);
+    background: rgba(7, 15, 22, 0.32);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.iks-workplan__worked-section {
+    display: grid;
+    gap: 12px;
+}
+
+.iks-workplan__worked-section + .iks-workplan__worked-section {
+    padding-top: 14px;
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.iks-workplan__inventory-breakdown-grid--hero {
+    margin-top: 0;
+}
+
+@media (max-width: 1460px) {
+    .iks-workplan__inventory-breakdown-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .iks-workplan__worked-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1320px) {
+    .iks-workplan__top {
+        grid-template-columns: 1fr;
+    }
+
+    .iks-workplan__arrow {
+        display: none;
+    }
+
+    .iks-workplan__plan-grid {
+        grid-auto-rows: minmax(300px, auto);
+    }
+}
+
+@media (max-width: 1180px) {
+    .iks-workplan__plan-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "today"
+            "later"
+            "worked";
+        grid-auto-rows: auto;
+    }
+}
+
+@media (max-width: 860px) {
+    .iks-workplan__inventory-card,
+    .iks-workplan__today-card,
+    .iks-workplan__later-card,
+    .iks-workplan__worked-card {
+        padding: 16px;
+    }
+
+    .iks-workplan__worked-grid,
+    .iks-workplan__worked-breakdown {
+        grid-template-columns: 1fr;
+    }
+
+    .iks-workplan__breakdown-content,
+    .iks-workplan__today-body {
+        grid-template-columns: 1fr;
+    }
+
+    .iks-workplan__today-kpis {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .iks-workplan__kv,
+    .iks-workplan__kv + .iks-workplan__kv {
+        padding: 0;
+        border-left: 0;
+    }
+
+    .iks-workplan__inventory-breakdown-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .iks-workplan__donut {
+        margin: 0 auto;
+    }
+
+    .iks-workplan__legend-row {
+        grid-template-columns: 10px minmax(0, 1fr);
+    }
+
+    .iks-workplan__cadence-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .iks-workplan__bucket-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+[data-theme="light"] .iks-workplan__inventory-meta strong,
+[data-theme="light"] .iks-workplan__summary-value,
+[data-theme="light"] .iks-workplan__breakdown-title,
+[data-theme="light"] .iks-workplan__breakdown-bar-head span,
+[data-theme="light"] .iks-workplan__legend-copy span,
+[data-theme="light"] .iks-workplan__worked-pill span,
+[data-theme="light"] .iks-workplan__worked-breakdown-card span {
+    color: #0f172a;
+}
+
+[data-theme="light"] .iks-workplan__summary-detail,
+[data-theme="light"] .iks-workplan__summary-balance,
+[data-theme="light"] .iks-workplan__breakdown-bar-row small,
+[data-theme="light"] .iks-workplan__legend-values small,
+[data-theme="light"] .iks-workplan__worked-pill small,
+[data-theme="light"] .iks-workplan__worked-breakdown-card small,
+[data-theme="light"] .iks-workplan__worked-footnote,
+[data-theme="light"] .iks-workplan__about-card p {
+    color: #64748b;
+}
+
+[data-theme="light"] .iks-workplan__cadence-shell,
+[data-theme="light"] .iks-workplan__kv,
+[data-theme="light"] .iks-workplan__later-item {
+    border-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .iks-workplan__about-card,
+[data-theme="light"] .iks-workplan__worked-footnote {
+    background: #f8fafc;
+    border-color: rgba(2, 132, 199, 0.18);
+}
+
+[data-theme="light"] .iks-workplan__breakdown-block,
+[data-theme="light"] .iks-workplan__worked-pill,
+[data-theme="light"] .iks-workplan__worked-breakdown-card {
+    background: #f8fafc;
+    border-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .iks-workplan__donut-center {
+    background: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .iks-workplan__legend-values strong,
+[data-theme="light"] .iks-workplan__breakdown-bar-head strong,
+[data-theme="light"] .iks-workplan__worked-pill strong,
+[data-theme="light"] .iks-workplan__worked-breakdown-card strong {
+    color: #0f172a;
 }
