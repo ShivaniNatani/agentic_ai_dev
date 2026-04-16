@@ -293,7 +293,7 @@ const GRAPH_COLORS = {
 const DEFAULT_CLIENT_CATALOG = [
     { client: 'GIA', label: 'GIA', available: true, status: 'available' }
 ]
-const PRA_UI_RELEASE = 'payer-response-command-center-2026-04-16'
+const PRA_UI_RELEASE = 'payer-response-clean-filters-2026-04-16'
 
 // ─── Payer Response fallback mock (shown when API is unavailable) ─────────────
 const PAYERS_MOCK = ['Aetna', 'UnitedHealth', 'BCBS', 'Cigna', 'Humana', 'Medicare', 'Medicaid', 'Anthem']
@@ -2316,13 +2316,11 @@ function PayerResponseAnalytics({ embedded = false }) {
                         <h3>Filters</h3>
                     </div>
                     <div className="pra-controls-summary">
-                        <div className="pra-filter-chip">{formatNumber(visiblePayerOptions.length)} of {formatNumber(payerOptions.length)} payer options shown</div>
                         {submitCoverageStart || submitCoverageEnd ? (
                             <div className="pra-filter-chip">
                                 Coverage: {formatShortDate(submitCoverageStart)} to {formatShortDate(submitCoverageEnd)}
                             </div>
                         ) : null}
-                        <div className="pra-filter-chip">{includeUnknownRankings ? 'Unknown bucket included' : 'Named payer rankings only'}</div>
                     </div>
                 </div>
 
@@ -2352,35 +2350,6 @@ function PayerResponseAnalytics({ embedded = false }) {
                     </div>
 
                     <div className="pra-filter-grid">
-                        <div className="pra-filter-card pra-filter-card-search">
-                            <label htmlFor="pra-payer-search" className="pra-control-label">Payer search</label>
-                            <input
-                                id="pra-payer-search"
-                                type="search"
-                                className="pra-search-input"
-                                placeholder="Search payer names"
-                                value={payerSearch}
-                                onChange={(event) => setPayerSearch(event.target.value)}
-                            />
-                        </div>
-
-                        <div className="pra-filter-card">
-                            <label htmlFor="pra-payer-select" className="pra-control-label">Payer scope</label>
-                            <select
-                                id="pra-payer-select"
-                                value={selectedPayer}
-                                className="pra-select"
-                                onChange={(event) => setSelectedPayer(event.target.value)}
-                            >
-                                <option value="All">All payers</option>
-                                {visiblePayerOptions.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label} ({formatNumber(option.claims)} claims)
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
                         <div className="pra-filter-card pra-filter-card-range">
                             <label htmlFor="pra-submit-start" className="pra-control-label">Submit date range</label>
                             <div className="pra-date-range-row">
@@ -2407,21 +2376,6 @@ function PayerResponseAnalytics({ embedded = false }) {
                                 />
                             </div>
                             <span className="pra-control-hint">Uses submission date coverage.</span>
-                        </div>
-
-                        <div className="pra-filter-card pra-filter-card-toggle">
-                            <label className={`pra-toggle-card ${selectedPayer !== 'All' ? 'disabled' : ''}`}>
-                                <input
-                                    type="checkbox"
-                                    checked={includeUnknownRankings}
-                                    disabled={selectedPayer !== 'All'}
-                                    onChange={(event) => setIncludeUnknownRankings(event.target.checked)}
-                                />
-                                <div>
-                                    <strong>Include missing payer bucket</strong>
-                                    <span>Payer leaderboards only.</span>
-                                </div>
-                            </label>
                         </div>
                     </div>
                 </div>
