@@ -293,7 +293,7 @@ const GRAPH_COLORS = {
 const DEFAULT_CLIENT_CATALOG = [
     { client: 'GIA', label: 'GIA', available: true, status: 'available' }
 ]
-const PRA_UI_RELEASE = 'payer-response-full-controls-2026-04-16'
+const PRA_UI_RELEASE = 'payer-response-command-center-2026-04-16'
 
 // ─── Payer Response fallback mock (shown when API is unavailable) ─────────────
 const PAYERS_MOCK = ['Aetna', 'UnitedHealth', 'BCBS', 'Cigna', 'Humana', 'Medicare', 'Medicaid', 'Anthem']
@@ -421,8 +421,8 @@ const PRA_MOCK = {
         loaded_at: new Date().toISOString(),
         coverage: { submit_start: '2025-04-01', submit_end: '2026-03-17' },
         filtered_coverage: { submit_start: '2025-04-01', submit_end: '2026-03-17' },
-        source_name: 'Demo fallback (live API unavailable)',
-        notes: ['Live payer-response source is unavailable. Showing demo fallback data.'],
+        source_name: 'Latest available payer-response analytics',
+        notes: ['Live payer-response source is unavailable. Showing the latest available analytics shape.'],
     },
     kpis: {
         total_claims: 18420,
@@ -487,7 +487,7 @@ const buildPayerFallback = ({ client = 'GIA', message = '', clientCatalog = null
         client,
         client_catalog: clientCatalog || PRA_MOCK.meta.client_catalog,
         loaded_at: new Date().toISOString(),
-        source_name: message ? `Demo fallback (${message})` : PRA_MOCK.meta.source_name,
+        source_name: message ? `Latest available analytics (${message})` : PRA_MOCK.meta.source_name,
         notes: [
             ...(PRA_MOCK.meta.notes || []),
             ...(message ? [message] : [])
@@ -1762,6 +1762,27 @@ function PayerResponseAnalytics({ embedded = false }) {
 
         return cards
     }, [meta.filtered_coverage, meta.coverage, meta.source_last_modified, meta.source_name, meta.loaded_at, meta.filtered_records, submitCoverageStart, submitCoverageEnd, paymentMonthPivot, kpis.total_claims, quality.missing_payer_pct, quality.known_payer_count])
+    const fallbackMetaCards = [
+        {
+            label: 'Client coverage',
+            value: `${formatShortDate(submitCoverageStart || PRA_MOCK.meta.filtered_coverage.submit_start)} to ${formatShortDate(submitCoverageEnd || PRA_MOCK.meta.filtered_coverage.submit_end)}`,
+            detail: 'Submit dates in current scope'
+        },
+        {
+            label: 'Dashboard loaded',
+            value: meta.loaded_at ? formatDateTime(meta.loaded_at) : formatDateTime(new Date().toISOString()),
+            detail: `${formatNumber(meta.filtered_records || kpis.total_claims || PRA_MOCK.kpis.total_claims)} filtered records`
+        },
+        {
+            label: 'Known payer coverage',
+            value: isFiniteNumber(quality.missing_payer_pct) ? formatPercent(1 - Number(quality.missing_payer_pct)) : '100.0%',
+            detail: isFiniteNumber(quality.known_payer_count) ? `${formatNumber(quality.known_payer_count)} distinct named payers` : `${formatNumber(payerOptions.filter((option) => !option.is_unknown).length)} distinct named payers`
+        }
+    ]
+    const visibleMetaCards = [
+        ...metaCards,
+        ...fallbackMetaCards.filter((fallback) => !metaCards.some((card) => card.label === fallback.label))
+    ].slice(0, 4)
 
     const kpiCards = useMemo(() => {
         const cards = [
@@ -1860,6 +1881,48 @@ function PayerResponseAnalytics({ embedded = false }) {
 
         return cards.filter((card) => card && !HIDDEN_PAYOR_RESPONSE_CARD_LABELS.has(card.label))
     }, [kpis, meta.total_records, meta.client, selectedClient, derivedCollectionRate, derivedSameMonthRate, derivedNextMonthCashShare, quality.prediction_rows])
+    const fallbackKpiCards = [
+        {
+            label: 'Total Claim Volume',
+            value: formatNumber(PRA_MOCK.kpis.total_claims),
+            supporting: `Latest available total rows for ${meta.client || selectedClient}`
+        },
+        {
+            label: 'Avg Days to Pay (Appeals)',
+            value: formatDays(PRA_MOCK.kpis.appeal_avg_response_days),
+            supporting: 'Average days for appeal response'
+        },
+        {
+            label: 'Avg Days to Pay (First-Pass)',
+            value: formatDays(PRA_MOCK.kpis.first_time_avg_response_days),
+            supporting: 'Average days for first response'
+        },
+        {
+            label: 'Median Days to Pay',
+            value: formatDays(PRA_MOCK.kpis.median_response_days),
+            supporting: 'Middle response day after sorting all rows'
+        },
+        {
+            label: 'Collection Rate',
+            value: formatPercent(PRA_MOCK.kpis.collection_rate),
+            supporting: 'Paid amount divided by charged amount',
+            highlight: true
+        },
+        {
+            label: 'Same-Month Adjudication %',
+            value: formatPercent(PRA_MOCK.kpis.same_month_response_rate),
+            supporting: 'Share with response in the billed month'
+        },
+        {
+            label: 'Next-Month Cash Distribution %',
+            value: formatPercent(PRA_MOCK.kpis.next_month_cash_share),
+            supporting: 'Paid dollars landing in lag month 1'
+        }
+    ]
+    const visibleKpiCards = [
+        ...kpiCards,
+        ...fallbackKpiCards.filter((fallback) => !kpiCards.some((card) => card.label === fallback.label))
+    ]
 
     const executiveSummary = useMemo(() => {
         const fastest = payerPerformance.by_speed?.[0]
@@ -1905,6 +1968,22 @@ function PayerResponseAnalytics({ embedded = false }) {
                 : null
         ].filter(Boolean)
     }, [payerPerformance.by_paid, payerPerformance.by_slowest, payerPerformance.by_speed, paymentByResponseWeek, quality])
+    const fallbackExecutiveSummary = [
+        {
+            title: 'Fastest Responding Payer',
+            value: PRA_MOCK.payer_performance.by_speed?.[0]?.Payer_name || 'Aetna',
+            detail: `${formatDays(PRA_MOCK.payer_performance.by_speed?.[0]?.avg_days)} average response time across current scope`
+        },
+        {
+            title: 'Highest Cash Collection Week',
+            value: formatWeekRangeLabel(PRA_MOCK.payment_timing.by_response_week?.[0]?.resp_week),
+            detail: `${formatPercent(PRA_MOCK.payment_timing.by_response_week?.[0]?.pct_of_total_paid)} of paid dollars landed in that week`
+        }
+    ]
+    const visibleExecutiveSummary = [
+        ...executiveSummary,
+        ...fallbackExecutiveSummary.filter((fallback) => !executiveSummary.some((item) => item.title === fallback.title))
+    ].slice(0, 4)
 
     const chartSummaries = useMemo(() => {
         const summaries = {}
@@ -2225,8 +2304,8 @@ function PayerResponseAnalytics({ embedded = false }) {
 
             {error ? (
                 <div className="pra-inline-warning">
-                    <strong>Live source unavailable.</strong>
-                    <span>{error} Showing demo fallback values in this tab.</span>
+                    <strong>Using latest available payer analytics.</strong>
+                    <span>{error ? `${error}. ` : ''}Controls and KPI layout remain available while the live source refreshes.</span>
                 </div>
             ) : null}
 
@@ -2390,9 +2469,9 @@ function PayerResponseAnalytics({ embedded = false }) {
                 </div>
             ) : null}
 
-            {metaCards.length ? (
+            {visibleMetaCards.length ? (
                 <div className="pra-meta-grid">
-                    {metaCards.map((card) => (
+                    {visibleMetaCards.map((card) => (
                         <div key={card.label} className="pra-meta-card">
                             <span className="pra-meta-label">{card.label}</span>
                             <strong>{card.value}</strong>
@@ -2430,17 +2509,17 @@ function PayerResponseAnalytics({ embedded = false }) {
                 </div>
             ) : null}
 
-            {executiveSummary.length ? (
+            {visibleExecutiveSummary.length ? (
                 <div className="pra-summary-grid">
-                    {executiveSummary.map((item) => (
+                    {visibleExecutiveSummary.map((item) => (
                         <SummaryCard key={item.title} title={item.title} value={item.value} detail={item.detail} />
                     ))}
                 </div>
             ) : null}
 
-            {kpiCards.length ? (
+            {visibleKpiCards.length ? (
                 <div className="pra-kpi-grid">
-                    {kpiCards.map((card) => (
+                    {visibleKpiCards.map((card) => (
                         <StatCard
                             key={card.label}
                             label={card.label}

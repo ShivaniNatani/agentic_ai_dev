@@ -2870,3 +2870,140 @@
 [data-theme="dark"] .pra-chart-box h4 + p {
     color: var(--pra-muted) !important;
 }
+
+/* Payer Response command-center hardening.
+   Keep the full filter/KPI shell visible even when live data is partial. */
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] {
+    --pra-shell-gap: 18px;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-header-row,
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-filter-stage-head,
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-filter-footer {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-header-row {
+    align-items: flex-end !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-controls-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-bottom: var(--pra-shell-gap) !important;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-filter-toolbar {
+    display: grid !important;
+    grid-template-columns: minmax(220px, 270px) minmax(0, 1fr) !important;
+    gap: 18px !important;
+    align-items: stretch !important;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-filter-grid {
+    display: grid !important;
+    grid-template-columns: minmax(200px, 1fr) minmax(190px, 0.85fr) minmax(340px, 1.5fr) minmax(220px, 0.95fr) !important;
+    gap: 14px !important;
+    align-items: stretch !important;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-meta-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+    gap: 12px !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-bottom: var(--pra-shell-gap) !important;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-summary-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    gap: 14px !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-bottom: var(--pra-shell-gap) !important;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-kpi-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important;
+    gap: 14px !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-bottom: 22px !important;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-filter-card,
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-client-stage,
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-meta-card,
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-summary-card,
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-kpi-card {
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-filter-card,
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-client-stage {
+    min-height: 122px !important;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-filter-card-range {
+    min-width: 0 !important;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-date-range-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    gap: 10px !important;
+    align-items: center !important;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-search-input,
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-select,
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-input-field {
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-kpi-card,
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-summary-card,
+.pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-meta-card {
+    min-width: 0 !important;
+    overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 1180px) {
+    .pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-filter-toolbar {
+        grid-template-columns: 1fr !important;
+    }
+
+    .pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-filter-grid {
+        grid-template-columns: repeat(2, minmax(220px, 1fr)) !important;
+    }
+}
+
+@media (max-width: 720px) {
+    .pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-header-row,
+    .pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-filter-stage-head,
+    .pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-filter-footer {
+        align-items: stretch !important;
+        flex-direction: column !important;
+    }
+
+    .pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-filter-grid,
+    .pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-date-range-row {
+        grid-template-columns: 1fr !important;
+    }
+
+    .pra-container[data-ui-release="payer-response-command-center-2026-04-16"] .pra-date-range-separator {
+        text-align: left !important;
+    }
+}
