@@ -1,4 +1,4 @@
-import { startTransition, useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import {
     Area,
     AreaChart,
@@ -63,10 +63,53 @@ const formatPercent = (value) => {
 
 const formatShortDate = (value) => {
     if (!value) return 'N/A'
-    const parsed = new Date(value)
+    const parts = String(value).split('-').map(Number)
+    const parsed = parts.length === 3 && parts.every(Number.isFinite)
+        ? new Date(parts[0], parts[1] - 1, parts[2], 12)
+        : new Date(value)
     if (Number.isNaN(parsed.getTime())) return value
     return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
+
+const parseDateKey = (value) => {
+    if (!value) return null
+    const [year, month, day] = String(value).split('-').map(Number)
+    if (!year || !month || !day) return null
+    const parsed = new Date(year, month - 1, day, 12)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+const toDateKey = (date) => {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return ''
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+}
+
+const addMonths = (date, offset) => new Date(date.getFullYear(), date.getMonth() + offset, 1, 12)
+
+const getCalendarMonthCells = (monthDate) => {
+    const view = monthDate instanceof Date && !Number.isNaN(monthDate.getTime()) ? monthDate : new Date()
+    const firstDay = new Date(view.getFullYear(), view.getMonth(), 1, 12)
+    const daysInMonth = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate()
+    const leadingBlanks = firstDay.getDay()
+    const cells = Array.from({ length: leadingBlanks }, () => null)
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+        cells.push(new Date(view.getFullYear(), view.getMonth(), day, 12))
+    }
+
+    while (cells.length % 7 !== 0) {
+        cells.push(null)
+    }
+
+    return cells
+}
+
+const formatCalendarMonth = (date) => (
+    date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+)
 
 const formatDateTime = (value) => {
     if (!value) return 'N/A'
@@ -740,6 +783,8 @@ function PayerResponseAnalytics({ embedded = false }) {
     const [payerSearch, setPayerSearch] = useState('')
     const [submitStart, setSubmitStart] = useState('')
     const [submitEnd, setSubmitEnd] = useState('')
+    const [datePickerOpen, setDatePickerOpen] = useState(false)
+    const [calendarViewMonth, setCalendarViewMonth] = useState(() => new Date())
     const [includeUnknownRankings, setIncludeUnknownRankings] = useState(false)
     const [plannerMode, setPlannerMode] = useState('target')
     const [plannerCadence, setPlannerCadence] = useState('week')
@@ -756,6 +801,7 @@ function PayerResponseAnalytics({ embedded = false }) {
     const [grossChargesInput, setGrossChargesInput] = useState(5_000_000)
     const [grossChargesInputText, setGrossChargesInputText] = useState(() => formatIntegerInput(5_000_000))
     const [weekLagCap, setWeekLagCap] = useState(8)
+    const datePickerRef = useRef(null)
 
     const deferredPayerSearch = useDeferredValue(payerSearch)
 
@@ -820,6 +866,13 @@ function PayerResponseAnalytics({ embedded = false }) {
     const meta = data?.meta || {}
     const submitCoverageStart = meta?.coverage?.submit_start || ''
     const submitCoverageEnd = meta?.coverage?.submit_end || ''
+    const submitCoverageStartDate = parseDateKey(submitCoverageStart)
+    const submitCoverageEndDate = parseDateKey(submitCoverageEnd)
+    const calendarCells = useMemo(() => getCalendarMonthCells(calendarViewMonth), [calendarViewMonth])
+    const calendarMonthLabel = formatCalendarMonth(calendarViewMonth)
+    const selectedRangeLabel = submitStart || submitEnd
+        ? `${submitStart ? formatShortDate(submitStart) : 'Start'} to ${submitEnd ? formatShortDate(submitEnd) : 'End'}`
+        : 'Select submit date range'
     const dateRangeError = submitStart && submitEnd && submitStart > submitEnd
         ? 'Submission start date must be on or before the end date.'
         : ''
@@ -876,6 +929,40 @@ function PayerResponseAnalytics({ embedded = false }) {
             prediction_rows: null
         }
     }, [meta?.data_quality, kpis.total_claims, kpis.total_charged, kpis.total_paid, timingCounts, unknownPayerRow, payerOptions])
+
+    useEffect(() => {
+        if (!datePickerOpen) return undefined
+
+        const handleClickOutside = (event) => {
+            if (datePickerRef.current && !datePickerRef.current.contains(event.target)) {
+                setDatePickerOpen(false)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [datePickerOpen])
+
+    const openDatePicker = () => {
+        const anchorDate = parseDateKey(submitStart || submitCoverageEnd || submitCoverageStart) || new Date()
+        setCalendarViewMonth(new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1, 12))
+        setDatePickerOpen((open) => !open)
+    }
+
+    const handleCalendarDaySelect = (dateKey) => {
+        if (!dateKey) return
+        if (submitCoverageStart && dateKey < submitCoverageStart) return
+        if (submitCoverageEnd && dateKey > submitCoverageEnd) return
+
+        if (!submitStart || submitEnd || dateKey < submitStart) {
+            setSubmitStart(dateKey)
+            setSubmitEnd('')
+            return
+        }
+
+        setSubmitEnd(dateKey)
+        setDatePickerOpen(false)
+    }
 
     useEffect(() => {
         if (selectedPayer === 'All') return
@@ -2363,28 +2450,107 @@ function PayerResponseAnalytics({ embedded = false }) {
                     <div className="pra-filter-grid">
                         <div className="pra-filter-card pra-filter-card-range">
                             <label htmlFor="pra-submit-start" className="pra-control-label">Submit date range</label>
-                            <div className="pra-date-range-row">
-                                <input
+                            <div className="pra-date-picker-shell" ref={datePickerRef}>
+                                <button
                                     id="pra-submit-start"
-                                    type="date"
-                                    className="pra-input-field pra-input-date"
-                                    aria-label="Submit date from"
-                                    value={submitStart}
-                                    min={submitCoverageStart || undefined}
-                                    max={submitEnd || submitCoverageEnd || undefined}
-                                    onChange={(event) => setSubmitStart(event.target.value)}
-                                />
-                                <span className="pra-date-range-separator">to</span>
-                                <input
-                                    id="pra-submit-end"
-                                    type="date"
-                                    className="pra-input-field pra-input-date"
-                                    aria-label="Submit date to"
-                                    value={submitEnd}
-                                    min={submitStart || submitCoverageStart || undefined}
-                                    max={submitCoverageEnd || undefined}
-                                    onChange={(event) => setSubmitEnd(event.target.value)}
-                                />
+                                    type="button"
+                                    className={`pra-date-range-trigger ${datePickerOpen ? 'open' : ''}`}
+                                    aria-haspopup="dialog"
+                                    aria-expanded={datePickerOpen}
+                                    onClick={openDatePicker}
+                                >
+                                    <span>
+                                        <small>From</small>
+                                        <strong>{submitStart ? formatShortDate(submitStart) : 'Start date'}</strong>
+                                    </span>
+                                    <span className="pra-date-range-separator">to</span>
+                                    <span>
+                                        <small>To</small>
+                                        <strong>{submitEnd ? formatShortDate(submitEnd) : 'End date'}</strong>
+                                    </span>
+                                </button>
+
+                                {datePickerOpen ? (
+                                    <div className="pra-calendar-popover" role="dialog" aria-label="Select submit date range">
+                                        <div className="pra-calendar-head">
+                                            <button
+                                                type="button"
+                                                className="pra-calendar-nav"
+                                                onClick={() => setCalendarViewMonth((month) => addMonths(month, -1))}
+                                                disabled={submitCoverageStartDate ? toDateKey(addMonths(calendarViewMonth, -1)) < toDateKey(new Date(submitCoverageStartDate.getFullYear(), submitCoverageStartDate.getMonth(), 1, 12)) : false}
+                                                aria-label="Previous month"
+                                            >
+                                                ‹
+                                            </button>
+                                            <strong>{calendarMonthLabel}</strong>
+                                            <button
+                                                type="button"
+                                                className="pra-calendar-nav"
+                                                onClick={() => setCalendarViewMonth((month) => addMonths(month, 1))}
+                                                disabled={submitCoverageEndDate ? toDateKey(addMonths(calendarViewMonth, 1)) > toDateKey(new Date(submitCoverageEndDate.getFullYear(), submitCoverageEndDate.getMonth(), 1, 12)) : false}
+                                                aria-label="Next month"
+                                            >
+                                                ›
+                                            </button>
+                                        </div>
+
+                                        <div className="pra-calendar-weekdays" aria-hidden="true">
+                                            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+                                                <span key={day}>{day}</span>
+                                            ))}
+                                        </div>
+
+                                        <div className="pra-calendar-grid">
+                                            {calendarCells.map((date, index) => {
+                                                if (!date) {
+                                                    return <span key={`blank-${index}`} className="pra-calendar-empty" />
+                                                }
+
+                                                const dateKey = toDateKey(date)
+                                                const disabled = (submitCoverageStart && dateKey < submitCoverageStart) || (submitCoverageEnd && dateKey > submitCoverageEnd)
+                                                const isStart = submitStart === dateKey
+                                                const isEnd = submitEnd === dateKey
+                                                const isInRange = submitStart && submitEnd && dateKey > submitStart && dateKey < submitEnd
+
+                                                return (
+                                                    <button
+                                                        key={dateKey}
+                                                        type="button"
+                                                        className={`pra-calendar-day ${isStart ? 'start' : ''} ${isEnd ? 'end' : ''} ${isInRange ? 'in-range' : ''}`}
+                                                        disabled={disabled}
+                                                        onClick={() => handleCalendarDaySelect(dateKey)}
+                                                        aria-pressed={isStart || isEnd}
+                                                    >
+                                                        {date.getDate()}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+
+                                        <div className="pra-calendar-footer">
+                                            <span>{selectedRangeLabel}</span>
+                                            <div>
+                                                <button
+                                                    type="button"
+                                                    className="pra-calendar-link"
+                                                    onClick={() => {
+                                                        setSubmitStart('')
+                                                        setSubmitEnd('')
+                                                    }}
+                                                >
+                                                    Clear
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="pra-calendar-done"
+                                                    onClick={() => setDatePickerOpen(false)}
+                                                >
+                                                    Done
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : null}
                             </div>
                             <span className="pra-control-hint">Uses submission date coverage.</span>
                         </div>
