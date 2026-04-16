@@ -293,6 +293,7 @@ const GRAPH_COLORS = {
 const DEFAULT_CLIENT_CATALOG = [
     { client: 'GIA', label: 'GIA', available: true, status: 'available' }
 ]
+const PRA_UI_RELEASE = 'payer-response-full-controls-2026-04-16'
 
 // ─── Payer Response fallback mock (shown when API is unavailable) ─────────────
 const PAYERS_MOCK = ['Aetna', 'UnitedHealth', 'BCBS', 'Cigna', 'Humana', 'Medicare', 'Medicaid', 'Anthem']
@@ -493,6 +494,7 @@ const buildPayerFallback = ({ client = 'GIA', message = '', clientCatalog = null
         ],
     },
 })
+const getFallbackPayerOptions = () => PRA_MOCK.filters.payer_options.map((option) => ({ ...option }))
 const UNKNOWN_PAYER = 'Unknown'
 const PLANNER_SCOPE_CURRENT = '__current_scope__'
 const PLANNER_SCOPE_ALL = '__all_payers__'
@@ -835,7 +837,7 @@ function PayerResponseAnalytics({ embedded = false }) {
             }))
         }
 
-        return []
+        return getFallbackPayerOptions()
     }, [data])
 
     const unknownPayerRow = useMemo(() => {
@@ -1717,11 +1719,13 @@ function PayerResponseAnalytics({ embedded = false }) {
 
     const metaCards = useMemo(() => {
         const cards = []
+        const coverageStart = meta.filtered_coverage?.submit_start || meta.coverage?.submit_start || submitCoverageStart || PRA_MOCK.meta.filtered_coverage.submit_start
+        const coverageEnd = meta.filtered_coverage?.submit_end || meta.coverage?.submit_end || submitCoverageEnd || PRA_MOCK.meta.filtered_coverage.submit_end
 
-        if (meta.filtered_coverage?.submit_start || meta.filtered_coverage?.submit_end) {
+        if (coverageStart || coverageEnd) {
             cards.push({
                 label: 'Client coverage',
-                value: `${formatShortDate(meta.filtered_coverage?.submit_start)} to ${formatShortDate(meta.filtered_coverage?.submit_end)}`,
+                value: `${formatShortDate(coverageStart)} to ${formatShortDate(coverageEnd)}`,
                 detail: 'Submit dates in current scope'
             })
         } else if (paymentMonthPivot.length) {
@@ -1757,7 +1761,7 @@ function PayerResponseAnalytics({ embedded = false }) {
         }
 
         return cards
-    }, [meta.filtered_coverage, meta.source_last_modified, meta.source_name, meta.loaded_at, meta.filtered_records, paymentMonthPivot, kpis.total_claims, quality.missing_payer_pct, quality.known_payer_count])
+    }, [meta.filtered_coverage, meta.coverage, meta.source_last_modified, meta.source_name, meta.loaded_at, meta.filtered_records, submitCoverageStart, submitCoverageEnd, paymentMonthPivot, kpis.total_claims, quality.missing_payer_pct, quality.known_payer_count])
 
     const kpiCards = useMemo(() => {
         const cards = [
@@ -2189,7 +2193,7 @@ function PayerResponseAnalytics({ embedded = false }) {
     }
 
     return (
-        <div className={`pra-container ${embedded ? 'embedded' : ''}`}>
+        <div className={`pra-container ${embedded ? 'embedded' : ''}`} data-ui-release={PRA_UI_RELEASE}>
             <div className="pra-header-row">
                 <div>
                     <h2>Payer Response Analytics</h2>

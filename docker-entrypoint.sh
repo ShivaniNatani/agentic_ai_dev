@@ -30,7 +30,7 @@ else
     gunicorn --bind 127.0.0.1:8511 \
         --workers 4 \
         --threads 2 \
-        --timeout 120 \
+        --timeout 180 \
         --access-logfile - \
         --error-logfile - \
         'api.app:app' &
