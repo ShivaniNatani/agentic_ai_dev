@@ -498,7 +498,13 @@ const getFallbackPayerOptions = () => PRA_MOCK.filters.payer_options.map((option
 const UNKNOWN_PAYER = 'Unknown'
 const PLANNER_SCOPE_CURRENT = '__current_scope__'
 const PLANNER_SCOPE_ALL = '__all_payers__'
-const HIDDEN_PAYOR_RESPONSE_CARD_LABELS = new Set(['Total Charged Amount', 'Total Paid Amount'])
+const HIDDEN_PAYOR_RESPONSE_CARD_LABELS = new Set([
+    'Average Days to Pay',
+    'Median Days to Pay',
+    '90th Percentile (SLA Window)',
+    'AI Prediction Accuracy',
+    'Overall Denial Rate'
+])
 
 const getCollectionTone = (value) => {
     const rate = Number(value)
@@ -1787,7 +1793,7 @@ function PayerResponseAnalytics({ embedded = false }) {
     const kpiCards = useMemo(() => {
         const cards = [
             {
-                label: 'Total Claim Volume',
+                label: 'Total Claims',
                 value: formatNumber(kpis.total_claims),
                 supporting: `${formatNumber(meta.total_records || kpis.total_claims)} total rows for ${meta.client || selectedClient}`
             },
@@ -1800,7 +1806,7 @@ function PayerResponseAnalytics({ embedded = false }) {
                 : null,
             isFiniteNumber(kpis.appeal_avg_response_days)
                 ? {
-                    label: 'Avg Days to Pay (Appeals)',
+                    label: 'Appeal Turnaround (Days)',
                     value: formatDays(kpis.appeal_avg_response_days),
                     supporting: `${formatNumber(kpis.appeal_response_count || 0)} appeal responses in current scope`,
                     highlight: true
@@ -1808,7 +1814,7 @@ function PayerResponseAnalytics({ embedded = false }) {
                 : null,
             isFiniteNumber(kpis.first_time_avg_response_days)
                 ? {
-                    label: 'Avg Days to Pay (First-Pass)',
+                    label: 'First-Pass Turnaround (Days)',
                     value: formatDays(kpis.first_time_avg_response_days),
                     supporting: `${formatNumber(kpis.first_time_response_count || 0)} first-pass responses in current scope`
                 }
@@ -1851,14 +1857,14 @@ function PayerResponseAnalytics({ embedded = false }) {
                 : null,
             isFiniteNumber(derivedSameMonthRate)
                 ? {
-                    label: 'Same-Month Adjudication %',
+                    label: 'Same-Month Resolution Rate',
                     value: formatPercent(derivedSameMonthRate),
                     supporting: 'Claim share with a month lag of 0'
                 }
                 : null,
             isFiniteNumber(derivedNextMonthCashShare)
                 ? {
-                    label: 'Next-Month Cash Distribution %',
+                    label: 'Next-Month Cash Share',
                     value: formatPercent(derivedNextMonthCashShare),
                     supporting: 'Paid dollars landing in lag month 1'
                 }
@@ -1883,24 +1889,29 @@ function PayerResponseAnalytics({ embedded = false }) {
     }, [kpis, meta.total_records, meta.client, selectedClient, derivedCollectionRate, derivedSameMonthRate, derivedNextMonthCashShare, quality.prediction_rows])
     const fallbackKpiCards = [
         {
-            label: 'Total Claim Volume',
+            label: 'Total Claims',
             value: formatNumber(PRA_MOCK.kpis.total_claims),
             supporting: `Latest available total rows for ${meta.client || selectedClient}`
         },
         {
-            label: 'Avg Days to Pay (Appeals)',
+            label: 'Appeal Turnaround (Days)',
             value: formatDays(PRA_MOCK.kpis.appeal_avg_response_days),
             supporting: 'Average days for appeal response'
         },
         {
-            label: 'Avg Days to Pay (First-Pass)',
+            label: 'First-Pass Turnaround (Days)',
             value: formatDays(PRA_MOCK.kpis.first_time_avg_response_days),
             supporting: 'Average days for first response'
         },
         {
-            label: 'Median Days to Pay',
-            value: formatDays(PRA_MOCK.kpis.median_response_days),
-            supporting: 'Middle response day after sorting all rows'
+            label: 'Total Charged Amount',
+            value: formatCurrency(PRA_MOCK.kpis.total_charged),
+            supporting: 'Current filtered scope'
+        },
+        {
+            label: 'Total Paid Amount',
+            value: formatCurrency(PRA_MOCK.kpis.total_paid),
+            supporting: 'Posted payments in current scope'
         },
         {
             label: 'Collection Rate',
@@ -1909,12 +1920,12 @@ function PayerResponseAnalytics({ embedded = false }) {
             highlight: true
         },
         {
-            label: 'Same-Month Adjudication %',
+            label: 'Same-Month Resolution Rate',
             value: formatPercent(PRA_MOCK.kpis.same_month_response_rate),
             supporting: 'Share with response in the billed month'
         },
         {
-            label: 'Next-Month Cash Distribution %',
+            label: 'Next-Month Cash Share',
             value: formatPercent(PRA_MOCK.kpis.next_month_cash_share),
             supporting: 'Paid dollars landing in lag month 1'
         }
